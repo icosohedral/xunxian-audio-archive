@@ -161,7 +161,7 @@ export default function MusicPage() {
     <div className="page library-page music-page">
       <header className="topbar"><div><span className="eyebrow">MUSIC COLLECTION</span><h1>仙乐集</h1></div><span className="record-count">{tracks.length} 首曲目</span></header>
       <section className="library-intro">
-        <div><span className="intro-kicker">寻仙世界背景音乐馆藏</span><h2>山川有声，昼夜成曲</h2><p>收录城镇、野外、副本与节庆场景音乐。播放将在站内切换页面时持续。</p></div>
+        <div><span className="intro-kicker">寻仙世界背景音乐馆藏</span><h2>山川有声，昼夜成曲</h2><p>收录城镇、野外、副本与节庆场景音乐，让每一段悠长旋律都能按情境重新被唤起。</p></div>
         <div className="collection-index" aria-label="馆藏编号 01"><span>COLLECTION</span><strong>01</strong></div>
       </section>
 
