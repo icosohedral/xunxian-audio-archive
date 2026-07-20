@@ -1,0 +1,3 @@
+# Local Cloudflare Worker only. Never commit the real secret.
+AUDIO_SIGNING_SECRET=replace-with-a-random-64-character-hex-value
+AUDIO_ENABLED=true
