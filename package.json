@@ -1,0 +1,19 @@
+{
+  "name": "xunxian-audio-archive",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "concurrently -n web,media -c cyan,magenta \"pnpm --dir apps/web dev\" \"pnpm --dir apps/media dev\"",
+    "catalog:build": "node tools/build-catalog.mjs",
+    "audio:transcode": "node tools/transcode-audio.mjs",
+    "audio:deployment-map": "node tools/build-audio-deployment-map.mjs",
+    "deploy:cloudflare": "pnpm build && pnpm --dir apps/web exec wrangler deploy --config dist/server/wrangler.json",
+    "build": "pnpm catalog:build && pnpm --dir apps/web build",
+    "typecheck": "pnpm --dir apps/media typecheck && pnpm --dir apps/web exec tsc --noEmit",
+    "check": "pnpm catalog:build && pnpm typecheck && pnpm --dir apps/web lint && pnpm --dir apps/web build && node --test tools/tests/*.test.mjs apps/web/tests/*.test.mjs"
+  },
+  "devDependencies": {
+    "concurrently": "^9.2.1",
+    "music-metadata": "^11.10.3"
+  }
+}

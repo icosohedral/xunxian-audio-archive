@@ -1,0 +1,73 @@
+{
+  "format": "xunxian-music-category-rules",
+  "version": 1,
+  "exportedAt": "2026-07-19T14:23:21.784Z",
+  "rules": [
+    {
+      "id": "eba8b072-f5f5-4245-8edc-09a1484955c0",
+      "name": "野外",
+      "pattern": ".*(yewai|field|fight).*|^world_.*",
+      "flags": "i"
+    },
+    {
+      "id": "3a833a1e-c9aa-4c1d-8276-28b991379a13",
+      "name": "夜晚",
+      "pattern": ".*night.*",
+      "flags": "i"
+    },
+    {
+      "id": "4ff620f7-827b-4154-b7ce-7fc0089852b8",
+      "name": "京城",
+      "pattern": ".*capital.*",
+      "flags": "i"
+    },
+    {
+      "id": "cafbcd36-324c-4977-86b5-18d3248b90cc",
+      "name": "道观",
+      "pattern": ".*temple.*|.*baiyunguan.*",
+      "flags": "i"
+    },
+    {
+      "id": "e34465b0-3f54-4955-85f7-05a4ede0e583",
+      "name": "五行劫",
+      "pattern": ".*wuxingjie.*",
+      "flags": "i"
+    },
+    {
+      "id": "6bfd382c-27a0-47c9-a82e-5e987969b485",
+      "name": "镇妖塔",
+      "pattern": ".*(zyt|zhenyaota).*",
+      "flags": "i"
+    },
+    {
+      "id": "c6650937-d7ab-483f-a44c-6c82f0f19209",
+      "name": "龙宫",
+      "pattern": ".*longgong.*",
+      "flags": "i"
+    },
+    {
+      "id": "938fabf9-f027-4a08-a1b4-1b2c2788898f",
+      "name": "白云观",
+      "pattern": ".*baiyunguan.*",
+      "flags": "i"
+    },
+    {
+      "id": "c416bc50-3c8f-419b-8670-28b002f56a99",
+      "name": "女儿国",
+      "pattern": ".*nverguo.*",
+      "flags": "i"
+    },
+    {
+      "id": "3e42f8bc-338d-4770-a720-673abb889e19",
+      "name": "城镇",
+      "pattern": "^xx_scene.*",
+      "flags": "i"
+    },
+    {
+      "id": "3848bc22-0311-4ad5-a385-33b395769e15",
+      "name": "副本",
+      "pattern": "^world_fb.*",
+      "flags": "i"
+    }
+  ]
+}

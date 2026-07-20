@@ -1,0 +1,211 @@
+{
+  "format": "xunxian-sound-category-rules",
+  "version": 1,
+  "exportedAt": "2026-07-19T13:55:15.657Z",
+  "rules": [
+    {
+      "id": "c7668e21-b282-41c5-8995-74500448954f",
+      "name": "敌对NPC语音",
+      "pattern": "^npcyy_.*$",
+      "flags": "i"
+    },
+    {
+      "id": "dd73d80d-9c4b-4a55-8384-1c9be482e3e4",
+      "name": "魔尊剧情",
+      "pattern": "^dia_.*$",
+      "flags": "i"
+    },
+    {
+      "id": "25468caf-6a0a-4681-a5e3-12e269f8bea0",
+      "name": "奇门",
+      "pattern": "^zdjn_qm_.*$|.*qimen.*",
+      "flags": "i"
+    },
+    {
+      "id": "caa3d9a0-f42d-4dc9-8877-0f53a52049ab",
+      "name": "驭剑",
+      "pattern": "^zdjn_yj.*$|.*yujian.*",
+      "flags": "i"
+    },
+    {
+      "id": "33ad69e5-f579-4ffa-bb3a-3bbb6848a774",
+      "name": "金刚",
+      "pattern": "^zdjn?(bj)_jg_.*$|.*jingang.*",
+      "flags": "i"
+    },
+    {
+      "id": "030b8726-a676-4adb-9c0a-1265fff4dc00",
+      "name": "天君",
+      "pattern": "^zdjn_tj_.*$|.*tianjun.*",
+      "flags": "i"
+    },
+    {
+      "id": "2f10b4ab-a9d2-471b-92c2-e1abbf8f1c53",
+      "name": "幽冥",
+      "pattern": "^zdjn_ym_.*$|.*youming.*",
+      "flags": "i"
+    },
+    {
+      "id": "87b9b98a-9a96-4916-9b62-1b072c23c970",
+      "name": "罗刹",
+      "pattern": "^zdjn_ls_.*$|^zdjn_lc_.*$|.*(luocha|luosha).*",
+      "flags": "i"
+    },
+    {
+      "id": "76fc5a80-c0c4-4b10-8fc8-28803cc3d36c",
+      "name": "控火",
+      "pattern": "^zdjn_kh.*$|.*konghuo.*",
+      "flags": "i"
+    },
+    {
+      "id": "f7b2fad7-7b05-4575-93fc-0281c5b27dfb",
+      "name": "掌电",
+      "pattern": "^(dianfa_zdjn|zdjn_zd)_.*|.*zhangdian.*",
+      "flags": "i"
+    },
+    {
+      "id": "8a0f245d-b298-4d1c-bd0c-608f3b93df44",
+      "name": "乾坤",
+      "pattern": "^zj_qk.*|^zjjn_qk.*|.*qiankun.*",
+      "flags": "i"
+    },
+    {
+      "id": "978ec8ef-be57-4629-b957-809b28828a80",
+      "name": "乘风",
+      "pattern": ".*chengfeng.*$",
+      "flags": "i"
+    },
+    {
+      "id": "4321f1ea-0f30-42d0-a568-df727244b25d",
+      "name": "刑天",
+      "pattern": ".*xingtian.*$",
+      "flags": "i"
+    },
+    {
+      "id": "2ce84735-2416-4829-9463-cc1f49cb0d7d",
+      "name": "妙音",
+      "pattern": "^zdjn_miaoyin_.*$|.*miaoyin.*",
+      "flags": "i"
+    },
+    {
+      "id": "6bdc41e7-c7eb-40ba-806e-727c9730b047",
+      "name": "法宝技能",
+      "pattern": "^(fb|fbjn|fbskl)_.*$",
+      "flags": "i"
+    },
+    {
+      "id": "57346bb0-260b-4e80-895d-07c23835ffa0",
+      "name": "NPC音效",
+      "pattern": "^(npcjn|npcskl)_.*",
+      "flags": "i"
+    },
+    {
+      "id": "9d4955d8-d91e-4c5a-81e7-d916f5cd52cc",
+      "name": "系统提示",
+      "pattern": "^gn_.*$",
+      "flags": "i"
+    },
+    {
+      "id": "cdd9c817-8687-419d-a40a-95a13fa089a3",
+      "name": "怪物音效",
+      "pattern": "^(boskl|bnfztg|boss|bossjn|bosk|npcboss|guaiwu|guiguai)_.*",
+      "flags": "i"
+    },
+    {
+      "id": "4fd32ed1-95dc-4e59-9bff-90a21a32362c",
+      "name": "界面音效",
+      "pattern": "^jiemian_.*",
+      "flags": "i"
+    },
+    {
+      "id": "22fd1a94-1266-409a-8df4-cc38b144d0ee",
+      "name": "中立NPC语音",
+      "pattern": "^(juese|npcrc)_.*",
+      "flags": "i"
+    },
+    {
+      "id": "80af3054-5814-4cc4-9e56-75d48a7d1397",
+      "name": "灵宝吟唱",
+      "pattern": "^lingbao.*",
+      "flags": "i"
+    },
+    {
+      "id": "aa9f1985-331b-49e3-ae91-aef284895217",
+      "name": "NPC语音",
+      "pattern": "^(npcyy|dia|juese|npcrc|nverguo|vo|vonpc|yy|npcty)_.*",
+      "flags": "i"
+    },
+    {
+      "id": "72b3afd3-d46f-4a35-bcf6-927650656a42",
+      "name": "技能音效",
+      "pattern": "^(boskl|bnfztg|boss|bossjn|bosk|guaiwu|fb|fbjn|fbskl|npcjn|zjskl|skl)_.*$|^zdjn_qm_.*$|.*qimen.*|^zdjn_yj_.*$|.*yujian.*|^zdjn_jg_.*$|.*jingang.*|^zdjn_tj_.*$|.*tianjun.*|^zdjn_ym_.*$|.*youming.*|^zdjn_ls_.*$|^zdjn_lc_.*$|.*(luocha|luosha).*|^zdjn_kh_.*$|.*konghuo.*|^dianfa_zdjn_.*|.*zhangdian.*|.*qiankun.*|.*chengfeng.*|.*xingtian.*|.*miaoyin.*|.*jineng.*",
+      "flags": "i"
+    },
+    {
+      "id": "ddd2b743-6c10-41e1-a934-dbd560312db1",
+      "name": "鬼怪",
+      "pattern": "^guiguai_.*",
+      "flags": "i"
+    },
+    {
+      "id": "9fe11d8d-7c8d-4b04-9cf0-a846401caddd",
+      "name": "环境音效",
+      "pattern": "^(huanjing|xx|shui|tianqi|zhongyuan|xiaodongwu|bird)_.*",
+      "flags": "i"
+    },
+    {
+      "id": "b0145f51-72bd-42e8-9081-dcdd93a0ce5e",
+      "name": "进度条",
+      "pattern": "^jindutiao_*",
+      "flags": "i"
+    },
+    {
+      "id": "ee63c365-d331-47cc-b922-9b4154f11c93",
+      "name": "叫卖语音",
+      "pattern": "^jiaomai_.*",
+      "flags": "i"
+    },
+    {
+      "id": "488238ff-ca3b-4be3-abd6-c3e8fcb959ae",
+      "name": "女儿国剧情",
+      "pattern": "^nverguo_.*",
+      "flags": "i"
+    },
+    {
+      "id": "326805e8-9e31-41b0-a164-8b9af7ca8318",
+      "name": "宠物技能",
+      "pattern": "^(pet|petskl|qichong)_.*",
+      "flags": "i"
+    },
+    {
+      "id": "1cacf2a8-3206-475b-b828-9400ff192047",
+      "name": "求助语音",
+      "pattern": "^rwss_.*",
+      "flags": "i"
+    },
+    {
+      "id": "738f4fdb-c28b-4502-abfd-443b4c49db38",
+      "name": "五行劫剧情",
+      "pattern": "^wxj_.*",
+      "flags": "i"
+    },
+    {
+      "id": "5f2ad311-d025-4ff6-8051-2aed69e4eb8d",
+      "name": "问候语音",
+      "pattern": "^(tsrw|tyrw)_.*",
+      "flags": "i"
+    },
+    {
+      "id": "9dae1856-55ac-42a0-b603-17ddc18cda88",
+      "name": "死亡语音",
+      "pattern": "^sw_.*|.*(_die|siwang).*",
+      "flags": "i"
+    },
+    {
+      "id": "4e4807fb-33ca-4cde-aa0b-275e951ddc1e",
+      "name": "八派尊者",
+      "pattern": "^npcty_.*zunzhe.*",
+      "flags": "i"
+    }
+  ]
+}

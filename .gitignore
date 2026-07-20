@@ -1,0 +1,66 @@
+# Dependencies and package-manager caches
+node_modules/
+.pnpm-store/
+.pnp
+.pnp.*
+
+# Build, framework, and test output
+dist/
+.next/
+.vinext/
+out/
+coverage/
+.turbo/
+.cache/
+.eslintcache
+*.tsbuildinfo
+outputs/
+work/
+
+# Cloudflare local state
+.wrangler/
+.dev.vars*
+!.dev.vars.example
+
+# Environment variables and local secrets
+.env
+.env.*
+!.env.example
+!.env.*.example
+*.pem
+*.key
+*.p12
+*.pfx
+
+# Local source archive and reproducible generated artifacts
+original_data/
+generated/
+
+# Audio must never be committed, even if copied outside the directories above
+*.aac
+*.ac3
+*.ape
+*.flac
+*.m4a
+*.mp3
+*.ogg
+*.opus
+*.wav
+*.wma
+apps/web/public/audio/
+
+# Logs and temporary files
+*.log
+npm-debug.log*
+pnpm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+*.swp
+*.swo
+*~
+
+# Operating-system and editor metadata
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
