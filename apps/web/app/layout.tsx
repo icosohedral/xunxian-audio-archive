@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import "./globals.css";
 import { PlayerProvider } from "./providers";
 import { SiteShell } from "./site-shell";
+import { VisitTracker } from "./visit-counter";
 
 export const metadata: Metadata = {
   metadataBase: new URL("https://music.xunxian.wiki"),
@@ -29,5 +30,5 @@ export const metadata: Metadata = {
 };
 
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
-  return <html lang="zh-CN"><body><PlayerProvider><SiteShell>{children}</SiteShell></PlayerProvider></body></html>;
+  return <html lang="zh-CN"><body><VisitTracker /><PlayerProvider><SiteShell>{children}</SiteShell></PlayerProvider></body></html>;
 }

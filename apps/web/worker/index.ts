@@ -2,10 +2,10 @@
 import { handleImageOptimization, DEFAULT_DEVICE_SIZES, DEFAULT_IMAGE_SIZES } from "vinext/server/image-optimization";
 import handler from "vinext/server/app-router-entry";
 import { routeAudioRequest, type AudioEnv } from "./audio";
+import { routeVisitRequest, type VisitEnv } from "./visits";
 
-interface Env extends AudioEnv {
+interface Env extends AudioEnv, VisitEnv {
   ASSETS: Fetcher;
-  DB?: D1Database;
   IMAGES: {
     input(stream: ReadableStream): {
       transform(options: Record<string, unknown>): {
@@ -84,6 +84,9 @@ const worker = {
 
     const audioResponse = await routeAudioRequest(request, env, ctx);
     if (audioResponse) return withSecurityHeaders(audioResponse, url);
+
+    const visitResponse = await routeVisitRequest(request, env);
+    if (visitResponse) return withSecurityHeaders(visitResponse, url);
 
     if (url.pathname === "/_vinext/image") {
       const allowedWidths = [...DEFAULT_DEVICE_SIZES, ...DEFAULT_IMAGE_SIZES];
