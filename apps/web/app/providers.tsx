@@ -9,6 +9,7 @@ type PlayMode = "sequence" | "shuffle" | "repeat";
 type PlayerState = {
   current: Track | null;
   playing: boolean;
+  loading: boolean;
   currentTime: number;
   duration: number;
   volume: number;
@@ -30,6 +31,7 @@ export function PlayerProvider({ children }: { children: React.ReactNode }) {
   const queueRef = useRef<Track[]>([]);
   const [current, setCurrent] = useState<Track | null>(null);
   const [playing, setPlaying] = useState(false);
+  const [loading, setLoading] = useState(false);
   const [currentTime, setCurrentTime] = useState(0);
   const [duration, setDuration] = useState(0);
   const [volume, updateVolume] = useState(0.75);
@@ -43,18 +45,27 @@ export function PlayerProvider({ children }: { children: React.ReactNode }) {
     audioRef.current = audio;
     const onTime = () => setCurrentTime(audio.currentTime);
     const onDuration = () => setDuration(Number.isFinite(audio.duration) ? audio.duration : 0);
-    const onPlay = () => setPlaying(true);
-    const onPause = () => setPlaying(false);
+    const onLoadStart = () => setLoading(true);
+    const onWaiting = () => setLoading(true);
+    const onPlaying = () => { setPlaying(true); setLoading(false); };
+    const onPause = () => { setPlaying(false); setLoading(false); };
+    const onError = () => setLoading(false);
     audio.addEventListener("timeupdate", onTime);
     audio.addEventListener("durationchange", onDuration);
-    audio.addEventListener("play", onPlay);
+    audio.addEventListener("loadstart", onLoadStart);
+    audio.addEventListener("waiting", onWaiting);
+    audio.addEventListener("playing", onPlaying);
     audio.addEventListener("pause", onPause);
+    audio.addEventListener("error", onError);
     return () => {
       audio.pause();
       audio.removeEventListener("timeupdate", onTime);
       audio.removeEventListener("durationchange", onDuration);
-      audio.removeEventListener("play", onPlay);
+      audio.removeEventListener("loadstart", onLoadStart);
+      audio.removeEventListener("waiting", onWaiting);
+      audio.removeEventListener("playing", onPlaying);
       audio.removeEventListener("pause", onPause);
+      audio.removeEventListener("error", onError);
     };
   }, []);
 
@@ -63,15 +74,17 @@ export function PlayerProvider({ children }: { children: React.ReactNode }) {
     if (!audio) return;
     if (queue) queueRef.current = queue;
     setError(null);
+    setLoading(true);
     try {
       if (current?.id !== track.id) {
-        const key = selectPlayableAudioKey(track.audio, (mimeType) => audio.canPlayType(mimeType));
-        audio.src = await resolveAudioUrl(key);
         setCurrent(track);
         setCurrentTime(0);
+        const key = selectPlayableAudioKey(track.audio, (mimeType) => audio.canPlayType(mimeType));
+        audio.src = await resolveAudioUrl(key);
       }
       await audio.play();
     } catch (cause) {
+      setLoading(false);
       setError(cause instanceof Error ? cause.message : "无法播放音频");
     }
   }, [current]);
@@ -104,6 +117,7 @@ export function PlayerProvider({ children }: { children: React.ReactNode }) {
   const value = useMemo<PlayerState>(() => ({
     current,
     playing,
+    loading,
     currentTime,
     duration,
     volume,
@@ -113,7 +127,15 @@ export function PlayerProvider({ children }: { children: React.ReactNode }) {
     toggle: () => {
       const audio = audioRef.current;
       if (!audio || !current) return;
-      if (audio.paused) void audio.play(); else audio.pause();
+      if (audio.paused) {
+        setLoading(true);
+        void audio.play().catch((cause) => {
+          setLoading(false);
+          setError(cause instanceof Error ? cause.message : "无法播放音频");
+        });
+      } else {
+        audio.pause();
+      }
     },
     previous: () => changeBy(-1),
     next: () => changeBy(1),
@@ -123,7 +145,7 @@ export function PlayerProvider({ children }: { children: React.ReactNode }) {
       if (audioRef.current) audioRef.current.volume = nextVolume;
     },
     cycleMode: () => setMode((value) => value === "sequence" ? "shuffle" : value === "shuffle" ? "repeat" : "sequence"),
-  }), [current, playing, currentTime, duration, volume, mode, error, play, changeBy]);
+  }), [current, playing, loading, currentTime, duration, volume, mode, error, play, changeBy]);
 
   return <PlayerContext.Provider value={value}>{children}</PlayerContext.Provider>;
 }

@@ -58,6 +58,7 @@ export default function SoundsPage() {
   const [page, setPage] = useState(1);
   const [activeId, setActiveId] = useState<string | null>(null);
   const [playing, setPlaying] = useState(false);
+  const [loadingId, setLoadingId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [rules, setRules] = useState<CategoryRule[]>([]);
   const [ruleName, setRuleName] = useState("");
@@ -108,9 +109,10 @@ export default function SoundsPage() {
     } catch { localStorage.removeItem(DURATION_FILTER_KEY); }
     const audio = new Audio();
     audio.preload = "none";
-    audio.addEventListener("play", () => setPlaying(true));
-    audio.addEventListener("pause", () => setPlaying(false));
-    audio.addEventListener("ended", () => setPlaying(false));
+    audio.addEventListener("playing", () => { setPlaying(true); setLoadingId(null); });
+    audio.addEventListener("pause", () => { setPlaying(false); setLoadingId(null); });
+    audio.addEventListener("ended", () => { setPlaying(false); setLoadingId(null); });
+    audio.addEventListener("error", () => setLoadingId(null));
     audioRef.current = audio;
     return () => audio.pause();
   }, []);
@@ -274,16 +276,21 @@ export default function SoundsPage() {
     setError(null);
     try {
       if (activeId === sound.id) {
+        setLoadingId(sound.id);
         audio.currentTime = 0;
         await audio.play();
       } else {
         audio.pause();
+        setLoadingId(sound.id);
         const key = selectPlayableAudioKey(sound.audio, (mimeType) => audio.canPlayType(mimeType));
         audio.src = await resolveAudioUrl(key);
         setActiveId(sound.id);
         await audio.play();
       }
-    } catch (cause) { setError(cause instanceof Error ? cause.message : "无法播放音效"); }
+    } catch (cause) {
+      setLoadingId(null);
+      setError(cause instanceof Error ? cause.message : "无法播放音效");
+    }
   }
 
   async function copyFilename(sound: Track) {
@@ -328,7 +335,8 @@ export default function SoundsPage() {
           const active = activeId === sound.id;
           const visibleTags = sound.matchedCategories.slice(0, 4);
           const copied = copiedId === sound.id;
-          return <div className={`sound-card ${active ? "active" : ""}`} key={sound.id}><button className="sound-play" onClick={() => void preview(sound)} aria-label={`试听 ${sound.originalName}`}>{active && playing ? <Pause size={17} /> : active ? <RotateCcw size={17} /> : <Play size={17} fill="currentColor" />}</button><button className="sound-info" onClick={() => void preview(sound)} title="点击试听"><strong>{sound.title}</strong><small>{sound.originalName}</small></button><span className="category-tags">{visibleTags.length ? visibleTags.map((tag) => <button className="category-tag matched" key={tag} onClick={() => { setCategory(tag); setPage(1); }} title={`筛选标签：${tag}`}>{tag}</button>) : <button className="category-tag" onClick={() => { setCategory("未分类"); setPage(1); }} title="筛选未分类文件">未分类</button>}{sound.matchedCategories.length > 4 && <span className="more-tags" title={sound.matchedCategories.slice(4).join("、")}>+{sound.matchedCategories.length - 4}</span>}</span><span className="sound-duration">{formatTime(sound.durationMs)}</span><span className={`review-dot ${sound.matchedRuleIds.length ? "matched" : ""}`} title={sound.matchedRuleIds.length ? `已匹配 ${sound.matchedCategories.length} 个标签` : "未分类"} /><button className={`copy-filename ${copied ? "copied" : ""}`} onClick={() => void copyFilename(sound)} aria-label={`复制文件名 ${sound.originalName}`} title={copied ? "已复制" : "复制文件名"}>{copied ? <Check size={15} /> : <Copy size={15} />}</button></div>;
+          const loading = loadingId === sound.id;
+          return <div className={`sound-card ${active ? "active" : ""}`} key={sound.id}><button className="sound-play" onClick={() => void preview(sound)} aria-label={loading ? `正在载入 ${sound.originalName}` : `试听 ${sound.originalName}`} aria-busy={loading}>{loading ? <span className="audio-spinner" /> : active && playing ? <Pause size={17} /> : active ? <RotateCcw size={17} /> : <Play size={17} fill="currentColor" />}</button><button className="sound-info" onClick={() => void preview(sound)} title="点击试听"><strong>{sound.title}</strong><small>{sound.originalName}</small></button><span className="category-tags">{visibleTags.length ? visibleTags.map((tag) => <button className="category-tag matched" key={tag} onClick={() => { setCategory(tag); setPage(1); }} title={`筛选标签：${tag}`}>{tag}</button>) : <button className="category-tag" onClick={() => { setCategory("未分类"); setPage(1); }} title="筛选未分类文件">未分类</button>}{sound.matchedCategories.length > 4 && <span className="more-tags" title={sound.matchedCategories.slice(4).join("、")}>+{sound.matchedCategories.length - 4}</span>}</span><span className="sound-duration">{formatTime(sound.durationMs)}</span><span className={`review-dot ${sound.matchedRuleIds.length ? "matched" : ""}`} title={sound.matchedRuleIds.length ? `已匹配 ${sound.matchedCategories.length} 个标签` : "未分类"} /><button className={`copy-filename ${copied ? "copied" : ""}`} onClick={() => void copyFilename(sound)} aria-label={`复制文件名 ${sound.originalName}`} title={copied ? "已复制" : "复制文件名"}>{copied ? <Check size={15} /> : <Copy size={15} />}</button></div>;
         })}
       </section>
       <div className="pagination"><button disabled={page === 1} onClick={() => setPage(page - 1)}>上一页</button><span>第 {page} / {pages} 页 · 每页最多 {PAGE_SIZE} 条</span><button disabled={page === pages} onClick={() => setPage(page + 1)}>下一页</button></div>

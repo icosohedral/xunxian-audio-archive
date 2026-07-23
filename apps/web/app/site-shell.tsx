@@ -30,7 +30,7 @@ function GlobalPlayer() {
         <div className="player-buttons">
           <button className="icon-button" onClick={player.cycleMode} title={`播放模式：${player.mode}`}>{modeIcon}</button>
           <button className="icon-button" onClick={player.previous} aria-label="上一首"><SkipBack size={18} /></button>
-          <button className="play-main" onClick={player.toggle} aria-label={player.playing ? "暂停" : "播放"}>{player.playing ? <Pause size={19} /> : <Play size={19} fill="currentColor" />}</button>
+          <button className="play-main" onClick={player.toggle} aria-label={player.loading ? "正在载入" : player.playing ? "暂停" : "播放"} aria-busy={player.loading}>{player.loading ? <span className="audio-spinner" /> : player.playing ? <Pause size={19} /> : <Play size={19} fill="currentColor" />}</button>
           <button className="icon-button" onClick={player.next} aria-label="下一首"><SkipForward size={18} /></button>
         </div>
         <div className="progress-row">

@@ -547,6 +547,17 @@ button:focus-visible, a:focus-visible, input:focus-visible, summary:focus-visibl
 }
 .row-play:hover { color: #fffdf9; background: var(--accent); }
 .playing-bars b { background: var(--accent); }
+.audio-spinner {
+  width: 15px;
+  height: 15px;
+  display: inline-block;
+  border: 2px solid currentColor;
+  border-right-color: transparent;
+  border-radius: 50%;
+  animation: audio-spin .7s linear infinite;
+}
+.music-index .audio-spinner { width: 14px; height: 14px; color: var(--accent); }
+@keyframes audio-spin { to { transform: rotate(360deg); } }
 .pagination { margin-top: 24px; font-size: 11px; }
 .pagination button { padding: 9px 14px; border-color: var(--line); border-radius: 10px; background: var(--white); font-size: 11px; }
 .pagination button:hover:not(:disabled) { color: var(--accent); border-color: rgba(204, 102, 51, .45); }
