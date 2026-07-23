@@ -57,7 +57,7 @@ export function SiteShell({ children }: { children: React.ReactNode }) {
         <nav aria-label="主导航">
           {links.map(({ href, label, icon: Icon }) => <Link key={href} href={href} className={pathname === href ? "active" : ""}><Icon size={18} /><span>{label}</span></Link>)}
         </nav>
-        <div className="sidebar-foot"><Archive size={14} /><span>资料库版本</span><strong>v1.0.1</strong></div>
+        <div className="sidebar-foot"><Archive size={14} /><span>资料库版本</span><strong>v1.0.2</strong></div>
       </aside>
       <main className="main-content">{children}</main>
       <GlobalPlayer />

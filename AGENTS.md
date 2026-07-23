@@ -8,3 +8,5 @@
 - BGM and sound effects use separate player instances.
 - The sounds page must never render all records at once.
 - Run `pnpm check` before considering a feature complete.
+- By default, deploy Cloudflare production updates to the existing `xunxian-web` Worker and its custom domain `music.xunxian.wiki`; do not substitute a Sites or preview deployment unless explicitly requested.
+- Increment the displayed archive patch version whenever deploying an update to `music.xunxian.wiki`.

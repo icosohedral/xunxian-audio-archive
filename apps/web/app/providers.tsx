@@ -29,6 +29,7 @@ const PlayerContext = createContext<PlayerState | null>(null);
 export function PlayerProvider({ children }: { children: React.ReactNode }) {
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const queueRef = useRef<Track[]>([]);
+  const loadingTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [current, setCurrent] = useState<Track | null>(null);
   const [playing, setPlaying] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -38,6 +39,23 @@ export function PlayerProvider({ children }: { children: React.ReactNode }) {
   const [mode, setMode] = useState<PlayMode>("sequence");
   const [error, setError] = useState<string | null>(null);
 
+  const stopLoading = useCallback(() => {
+    if (loadingTimeoutRef.current) clearTimeout(loadingTimeoutRef.current);
+    loadingTimeoutRef.current = null;
+    setLoading(false);
+  }, []);
+
+  const startLoading = useCallback(() => {
+    if (loadingTimeoutRef.current) clearTimeout(loadingTimeoutRef.current);
+    setLoading(true);
+    loadingTimeoutRef.current = setTimeout(() => {
+      audioRef.current?.pause();
+      loadingTimeoutRef.current = null;
+      setLoading(false);
+      setError("音频载入超时，请重试");
+    }, 15_000);
+  }, []);
+
   useEffect(() => {
     const audio = new Audio();
     audio.preload = "metadata";
@@ -45,36 +63,40 @@ export function PlayerProvider({ children }: { children: React.ReactNode }) {
     audioRef.current = audio;
     const onTime = () => setCurrentTime(audio.currentTime);
     const onDuration = () => setDuration(Number.isFinite(audio.duration) ? audio.duration : 0);
-    const onLoadStart = () => setLoading(true);
-    const onWaiting = () => setLoading(true);
-    const onPlaying = () => { setPlaying(true); setLoading(false); };
-    const onPause = () => { setPlaying(false); setLoading(false); };
-    const onError = () => setLoading(false);
+    const onLoadStart = () => startLoading();
+    const onWaiting = () => startLoading();
+    const onCanPlay = () => stopLoading();
+    const onPlaying = () => { setPlaying(true); stopLoading(); };
+    const onPause = () => { setPlaying(false); stopLoading(); };
+    const onError = () => stopLoading();
     audio.addEventListener("timeupdate", onTime);
     audio.addEventListener("durationchange", onDuration);
     audio.addEventListener("loadstart", onLoadStart);
     audio.addEventListener("waiting", onWaiting);
+    audio.addEventListener("canplay", onCanPlay);
     audio.addEventListener("playing", onPlaying);
     audio.addEventListener("pause", onPause);
     audio.addEventListener("error", onError);
     return () => {
       audio.pause();
+      stopLoading();
       audio.removeEventListener("timeupdate", onTime);
       audio.removeEventListener("durationchange", onDuration);
       audio.removeEventListener("loadstart", onLoadStart);
       audio.removeEventListener("waiting", onWaiting);
+      audio.removeEventListener("canplay", onCanPlay);
       audio.removeEventListener("playing", onPlaying);
       audio.removeEventListener("pause", onPause);
       audio.removeEventListener("error", onError);
     };
-  }, []);
+  }, [startLoading, stopLoading]);
 
   const play = useCallback(async (track: Track, queue?: Track[]) => {
     const audio = audioRef.current;
     if (!audio) return;
     if (queue) queueRef.current = queue;
     setError(null);
-    setLoading(true);
+    startLoading();
     try {
       if (current?.id !== track.id) {
         setCurrent(track);
@@ -83,11 +105,12 @@ export function PlayerProvider({ children }: { children: React.ReactNode }) {
         audio.src = await resolveAudioUrl(key);
       }
       await audio.play();
+      stopLoading();
     } catch (cause) {
-      setLoading(false);
+      stopLoading();
       setError(cause instanceof Error ? cause.message : "无法播放音频");
     }
-  }, [current]);
+  }, [current, startLoading, stopLoading]);
 
   const changeBy = useCallback((step: number) => {
     if (!current || !queueRef.current.length) return;
@@ -128,11 +151,13 @@ export function PlayerProvider({ children }: { children: React.ReactNode }) {
       const audio = audioRef.current;
       if (!audio || !current) return;
       if (audio.paused) {
-        setLoading(true);
-        void audio.play().catch((cause) => {
-          setLoading(false);
-          setError(cause instanceof Error ? cause.message : "无法播放音频");
-        });
+        startLoading();
+        void audio.play()
+          .then(stopLoading)
+          .catch((cause) => {
+            stopLoading();
+            setError(cause instanceof Error ? cause.message : "无法播放音频");
+          });
       } else {
         audio.pause();
       }
@@ -145,7 +170,7 @@ export function PlayerProvider({ children }: { children: React.ReactNode }) {
       if (audioRef.current) audioRef.current.volume = nextVolume;
     },
     cycleMode: () => setMode((value) => value === "sequence" ? "shuffle" : value === "shuffle" ? "repeat" : "sequence"),
-  }), [current, playing, loading, currentTime, duration, volume, mode, error, play, changeBy]);
+  }), [current, playing, loading, currentTime, duration, volume, mode, error, play, changeBy, startLoading, stopLoading]);
 
   return <PlayerContext.Provider value={value}>{children}</PlayerContext.Provider>;
 }

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Braces, Check, ChevronDown, ChevronRight, CircleAlert, Copy, Download, Pause, Pencil, Play, Plus, RotateCcw, Save, Search, SlidersHorizontal, Trash2, Upload, X } from "lucide-react";
 import { formatTime, normalizeSearch, resolveAudioUrl, selectPlayableAudioKey, type Track } from "../types";
 
@@ -73,8 +73,26 @@ export default function SoundsPage() {
   const [hideShortDuration, setHideShortDuration] = useState(false);
   const [durationThreshold, setDurationThreshold] = useState("1");
   const audioRef = useRef<HTMLAudioElement | null>(null);
+  const loadingTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const importInputRef = useRef<HTMLInputElement | null>(null);
   const filterMenuRef = useRef<HTMLDetailsElement | null>(null);
+
+  const stopLoading = useCallback(() => {
+    if (loadingTimeoutRef.current) clearTimeout(loadingTimeoutRef.current);
+    loadingTimeoutRef.current = null;
+    setLoadingId(null);
+  }, []);
+
+  const startLoading = useCallback((soundId: string) => {
+    if (loadingTimeoutRef.current) clearTimeout(loadingTimeoutRef.current);
+    setLoadingId(soundId);
+    loadingTimeoutRef.current = setTimeout(() => {
+      audioRef.current?.pause();
+      loadingTimeoutRef.current = null;
+      setLoadingId(null);
+      setError("音效载入超时，请重试");
+    }, 15_000);
+  }, []);
 
   useEffect(() => {
     fetch("/data/sound.v1.json").then((res) => res.json()).then(setSounds);
@@ -109,13 +127,27 @@ export default function SoundsPage() {
     } catch { localStorage.removeItem(DURATION_FILTER_KEY); }
     const audio = new Audio();
     audio.preload = "none";
-    audio.addEventListener("playing", () => { setPlaying(true); setLoadingId(null); });
-    audio.addEventListener("pause", () => { setPlaying(false); setLoadingId(null); });
-    audio.addEventListener("ended", () => { setPlaying(false); setLoadingId(null); });
-    audio.addEventListener("error", () => setLoadingId(null));
+    const onCanPlay = () => stopLoading();
+    const onPlaying = () => { setPlaying(true); stopLoading(); };
+    const onPause = () => { setPlaying(false); stopLoading(); };
+    const onEnded = () => { setPlaying(false); stopLoading(); };
+    const onError = () => stopLoading();
+    audio.addEventListener("canplay", onCanPlay);
+    audio.addEventListener("playing", onPlaying);
+    audio.addEventListener("pause", onPause);
+    audio.addEventListener("ended", onEnded);
+    audio.addEventListener("error", onError);
     audioRef.current = audio;
-    return () => audio.pause();
-  }, []);
+    return () => {
+      audio.pause();
+      stopLoading();
+      audio.removeEventListener("canplay", onCanPlay);
+      audio.removeEventListener("playing", onPlaying);
+      audio.removeEventListener("pause", onPause);
+      audio.removeEventListener("ended", onEnded);
+      audio.removeEventListener("error", onError);
+    };
+  }, [stopLoading]);
 
   useEffect(() => {
     function closeFilterMenu(event: PointerEvent) {
@@ -276,19 +308,21 @@ export default function SoundsPage() {
     setError(null);
     try {
       if (activeId === sound.id) {
-        setLoadingId(sound.id);
+        startLoading(sound.id);
         audio.currentTime = 0;
         await audio.play();
+        stopLoading();
       } else {
         audio.pause();
-        setLoadingId(sound.id);
+        startLoading(sound.id);
         const key = selectPlayableAudioKey(sound.audio, (mimeType) => audio.canPlayType(mimeType));
         audio.src = await resolveAudioUrl(key);
         setActiveId(sound.id);
         await audio.play();
+        stopLoading();
       }
     } catch (cause) {
-      setLoadingId(null);
+      stopLoading();
       setError(cause instanceof Error ? cause.message : "无法播放音效");
     }
   }
