@@ -24,7 +24,7 @@ export default function AboutPage() {
       <section className="credits-card">
         <div className="credits-heading"><span className="eyebrow">PROJECT CREDITS</span><h2>项目人员与致谢</h2></div>
         <div className="credits-grid">
-          <article><span className="credit-mark author"><Github size={20} /></span><div><span className="eyebrow">CREATED &amp; MAINTAINED BY</span><h3>icosohedral</h3><p>寻仙音乐资料库的整理、规则维护与网站开发。</p><a href="https://github.com/icosohedral/xunxian-audio-archive" target="_blank" rel="noreferrer">icosohedral/xunxian-audio-archive <ExternalLink size={14} /></a></div></article>
+          <article><span className="credit-mark author"><Github size={20} /></span><div><span className="eyebrow">CREATED &amp; MAINTAINED BY</span><h3>icosohedral</h3><p>寻仙音乐资料库的整理、规则维护与网站开发。</p><a href="https://github.com/icosohedral/xunxian-audio-archive" target="_blank" rel="noreferrer">icosohedral <ExternalLink size={14} /></a></div></article>
           <article><span className="credit-mark thanks"><PackageOpen size={20} /></span><div><span className="eyebrow">SPECIAL THANKS</span><h3>贴吧用户「耳目清净」</h3><p>感谢其开发的寻仙游戏资源解包工具，为本资料库的资源整理提供了重要支持。</p><a href="https://tieba.baidu.com/home/main?id=tb.1.18df2155.RJhYqZLwH1IZGDyVW0eKzA%3Ft%3D1784471593&amp;fr=pb" target="_blank" rel="noreferrer">访问用户主页 <ExternalLink size={14} /></a></div></article>
         </div>
       </section>
