@@ -8,7 +8,7 @@ export const metadata: Metadata = {
     title: "万籁库 | 寻仙音乐资料库",
     description: "检索、分类与试听《寻仙》游戏音效。",
     url: "/sounds",
-    images: [{ url: "/og.png", width: 1200, height: 630, alt: "寻仙音乐资料库" }],
+    images: [{ url: "/og-archive.png", width: 1200, height: 630, alt: "寻仙音乐资料库" }],
   },
 };
 

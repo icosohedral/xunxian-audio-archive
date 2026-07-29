@@ -3,15 +3,15 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import type { CSSProperties } from "react";
-import { Archive, Database, Info, LayoutDashboard, Library, ListMusic, Pause, Play, Repeat2, Shuffle, SkipBack, SkipForward, Volume2 } from "lucide-react";
+import { ListMusic, Pause, Play, Repeat2, Shuffle, SkipBack, SkipForward, Volume2 } from "lucide-react";
 import { usePlayer } from "./providers";
 import { formatTime } from "./types";
+import { DailyVisitStatus } from "./visit-counter";
 
 const links = [
-  { href: "/", label: "总览", icon: LayoutDashboard },
-  { href: "/music", label: "仙乐集", icon: Library },
-  { href: "/sounds", label: "万籁库", icon: Database },
-  { href: "/about", label: "关于", icon: Info },
+  { href: "/", label: "总览", glyph: "录", count: "6,414" },
+  { href: "/music", label: "仙乐集", glyph: "乐", count: "148" },
+  { href: "/sounds", label: "万籁库", glyph: "声", count: "6,266" },
 ];
 
 function GlobalPlayer() {
@@ -49,17 +49,30 @@ export function SiteShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   return (
     <div className="app-shell">
-      <aside className="sidebar">
-        <Link href="/" className="brand" aria-label="寻仙音乐资料库首页">
-          <span className="brand-mark"><span>寻</span></span>
-          <span><strong>寻仙音乐资料库</strong><small>XUNXIAN AUDIO ARCHIVE</small></span>
-        </Link>
-        <nav aria-label="主导航">
-          {links.map(({ href, label, icon: Icon }) => <Link key={href} href={href} className={pathname === href ? "active" : ""}><Icon size={18} /><span>{label}</span></Link>)}
+      <a className="skip-link" href="#archive-main">跳到资料正文</a>
+      <header className="site-header">
+        <div className="brand-bar">
+          <Link href="/" className="brand" aria-label="寻仙音乐资料库首页">
+            <span className="brand-mark" aria-hidden="true">寻</span>
+            <span className="brand-copy">
+              <strong>寻仙音乐资料库</strong>
+              <small className="brand-version">v1.0.5</small>
+            </span>
+          </Link>
+          <div className="header-status">
+            <Link href="/about" className={pathname === "/about" ? "active" : ""} aria-current={pathname === "/about" ? "page" : undefined}>关于网站</Link>
+            <span aria-hidden="true">|</span>
+            <DailyVisitStatus />
+          </div>
+        </div>
+        <nav className="resource-tabs" aria-label="资料库主导航">
+          {links.map(({ href, label, glyph, count }) => {
+            const active = pathname === href;
+            return <Link key={href} href={href} className={active ? "active" : ""} aria-current={active ? "page" : undefined}><span className="tab-glyph" aria-hidden="true">{glyph}</span><span className="tab-copy"><strong>{label}</strong><small>{count}</small></span></Link>;
+          })}
         </nav>
-        <div className="sidebar-foot"><Archive size={14} /><span>资料库版本</span><strong>v1.0.4</strong></div>
-      </aside>
-      <main className="main-content">{children}</main>
+      </header>
+      <main id="archive-main" className="main-content">{children}</main>
       <GlobalPlayer />
     </div>
   );

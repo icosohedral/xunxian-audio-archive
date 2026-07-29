@@ -19,13 +19,13 @@ export const metadata: Metadata = {
     title: "寻仙音乐资料库",
     description: "浏览、检索与试听《寻仙》游戏音乐与音效资料。",
     url: "/",
-    images: [{ url: "/og.png", width: 1200, height: 630, alt: "寻仙音乐资料库" }],
+    images: [{ url: "/og-archive.png", width: 1200, height: 630, alt: "寻仙音乐资料库" }],
   },
   twitter: {
     card: "summary_large_image",
     title: "寻仙音乐资料库",
     description: "浏览、检索与试听《寻仙》游戏音乐与音效资料。",
-    images: ["/og.png"],
+    images: ["/og-archive.png"],
   },
 };
 

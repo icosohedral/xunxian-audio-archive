@@ -17,8 +17,8 @@ test("renders the archive homepage", async () => {
   assert.match(html, /<title>寻仙音乐资料库/);
   assert.match(html, /6,414/);
   assert.match(html, /寻仙音乐资料库/);
-  assert.match(html, /在线运行/);
-  assert.match(html, /status-cluster/);
+  assert.match(html, /今日来访/);
+  assert.match(html, /header-visit/);
   assert.doesNotMatch(html, /codex-preview/);
 });
 
@@ -34,7 +34,7 @@ test("publishes canonical metadata and crawler discovery files", async () => {
     const response = await render(pathname);
     const html = await response.text();
     assert.match(html, new RegExp(`<link rel="canonical" href="https://music\\.xunxian\\.wiki${canonical === "/" ? "/?" : canonical}"`), pathname);
-    assert.match(html, /<meta property="og:image" content="https:\/\/music\.xunxian\.wiki\/og\.png"/);
+    assert.match(html, /<meta property="og:image" content="https:\/\/music\.xunxian\.wiki\/og-archive\.png"/);
   }
 
   const robots = await render("/robots.txt");

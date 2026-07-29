@@ -91,9 +91,9 @@ export function DailyVisitStatus() {
   }, []);
 
   return (
-    <div className="status-cluster" aria-label={count === null ? "网站在线运行" : `网站在线运行，今日来访 ${count.toLocaleString("zh-CN")} 人次`}>
-      <span className="local-badge"><span className="status-dot" />在线运行</span>
-      {count !== null && <span className="daily-visit" aria-live="polite"><span>今日来访</span><strong>{count.toLocaleString("zh-CN")}</strong></span>}
-    </div>
+    <span className="header-visit" aria-label={count === null ? "正在载入今日访客数" : `今日来访 ${count.toLocaleString("zh-CN")} 人次`} aria-live="polite">
+      <span>今日来访</span>
+      {count === null ? <span className="visit-placeholder" aria-hidden="true">—</span> : <strong>{count.toLocaleString("zh-CN")}</strong>}
+    </span>
   );
 }

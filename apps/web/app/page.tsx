@@ -1,6 +1,5 @@
 import Link from "next/link";
 import { ArrowRight } from "lucide-react";
-import { DailyVisitStatus } from "./visit-counter";
 
 const categories = [
   ["RULES", "正则分类", "按文件名规则建立自己的分类"],
@@ -12,14 +11,16 @@ const categories = [
 export default function Home() {
   return (
     <div className="page home-page">
-      <header className="topbar"><div><span className="eyebrow">XUNXIAN AUDIO ARCHIVE</span><h1>总览</h1></div><DailyVisitStatus /></header>
+      <header className="topbar"><div><span className="eyebrow">XUNXIAN AUDIO ARCHIVE</span><h1>总览</h1></div></header>
       <section className="overview-hero">
         <div className="overview-copy">
-          <span className="overview-kicker">寻仙世界 · 声音编目</span>
+          <span className="eyebrow">A TRACEABLE AUDIO ARCHIVE</span>
           <h2>让每一段声音，<br />都能被重新听见。</h2>
-          <p>从城镇的晨钟到战斗中的一声剑鸣，这里收录了寻仙世界的背景音乐与游戏音效。</p>
+          <p>从城镇晨钟到战斗剑鸣，将散落在《寻仙》世界里的背景音乐与游戏音效，重新编目、检索与聆听。</p>
+          <strong className="overview-kicker">循声入卷，听见山川与人间。</strong>
           <div className="hero-actions"><Link className="primary-button" href="/music">浏览仙乐集 <ArrowRight size={16} /></Link><Link className="text-button" href="/sounds">检索万籁库 <ArrowRight size={16} /></Link></div>
         </div>
+        <span className="hero-watermark" aria-hidden="true">录</span>
         <aside className="archive-ledger" aria-label="资料库索引摘要">
           <span className="ledger-id">ARCHIVE / XA–01</span>
           <dl>
