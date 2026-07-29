@@ -50,28 +50,30 @@ export function SiteShell({ children }: { children: React.ReactNode }) {
   return (
     <div className="app-shell">
       <a className="skip-link" href="#archive-main">跳到资料正文</a>
-      <header className="site-header">
-        <div className="brand-bar">
-          <Link href="/" className="brand" aria-label="寻仙音乐资料库首页">
-            <span className="brand-mark" aria-hidden="true">寻</span>
-            <span className="brand-copy">
-              <strong>寻仙音乐资料库</strong>
-              <small className="brand-version">v1.0.5</small>
-            </span>
-          </Link>
-          <div className="header-status">
-            <Link href="/about" className={pathname === "/about" ? "active" : ""} aria-current={pathname === "/about" ? "page" : undefined}>关于网站</Link>
-            <span aria-hidden="true">|</span>
-            <DailyVisitStatus />
-          </div>
+      <header className="brand-bar">
+        <Link href="/" className="brand" aria-label="寻仙音乐资料库首页">
+          <span className="brand-mark" aria-hidden="true">寻</span>
+          <span className="brand-copy">
+            <strong>寻仙音乐资料库</strong>
+            <small className="brand-version">v1.0.6</small>
+          </span>
+        </Link>
+        <div className="header-status">
+          <Link href="/about" className={`about-trigger${pathname === "/about" ? " active" : ""}`} aria-current={pathname === "/about" ? "page" : undefined}>关于网站</Link>
+          <span className="topbar-separator" aria-hidden="true">|</span>
+          <a className="topbar-resource-link" href="https://xunxian.wiki">资源总站</a>
+          <span className="topbar-separator" aria-hidden="true">|</span>
+          <DailyVisitStatus />
         </div>
+      </header>
+      <div className="resource-nav">
         <nav className="resource-tabs" aria-label="资料库主导航">
           {links.map(({ href, label, glyph, count }) => {
             const active = pathname === href;
             return <Link key={href} href={href} className={active ? "active" : ""} aria-current={active ? "page" : undefined}><span className="tab-glyph" aria-hidden="true">{glyph}</span><span className="tab-copy"><strong>{label}</strong><small>{count}</small></span></Link>;
           })}
         </nav>
-      </header>
+      </div>
       <main id="archive-main" className="main-content">{children}</main>
       <GlobalPlayer />
     </div>

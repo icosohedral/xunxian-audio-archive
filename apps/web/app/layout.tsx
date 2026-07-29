@@ -30,5 +30,5 @@ export const metadata: Metadata = {
 };
 
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
-  return <html lang="zh-CN"><body><VisitTracker /><PlayerProvider><SiteShell>{children}</SiteShell></PlayerProvider></body></html>;
+  return <html lang="zh-CN"><head><link rel="icon" href="/favicon.svg" type="image/svg+xml" /></head><body><VisitTracker /><PlayerProvider><SiteShell>{children}</SiteShell></PlayerProvider></body></html>;
 }

@@ -18,7 +18,7 @@ test("renders the archive homepage", async () => {
   assert.match(html, /6,414/);
   assert.match(html, /寻仙音乐资料库/);
   assert.match(html, /今日来访/);
-  assert.match(html, /header-visit/);
+  assert.match(html, /topbar-visitors/);
   assert.doesNotMatch(html, /codex-preview/);
 });
 

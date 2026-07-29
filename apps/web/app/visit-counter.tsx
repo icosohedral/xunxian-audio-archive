@@ -91,9 +91,8 @@ export function DailyVisitStatus() {
   }, []);
 
   return (
-    <span className="header-visit" aria-label={count === null ? "正在载入今日访客数" : `今日来访 ${count.toLocaleString("zh-CN")} 人次`} aria-live="polite">
-      <span>今日来访</span>
-      {count === null ? <span className="visit-placeholder" aria-hidden="true">—</span> : <strong>{count.toLocaleString("zh-CN")}</strong>}
+    <span className="topbar-visitors" aria-label={count === null ? "正在载入今日访客数" : `今日来访 ${count.toLocaleString("zh-CN")} 人次`} aria-live="polite">
+      今日来访 {count === null ? <span className="visit-placeholder" aria-hidden="true">—</span> : <strong>{count.toLocaleString("zh-CN")}</strong>}
     </span>
   );
 }
