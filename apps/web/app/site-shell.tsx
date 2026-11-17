@@ -1,18 +1,30 @@
 "use client";
 
+import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import type { CSSProperties } from "react";
 import { ListMusic, Pause, Play, Repeat2, Shuffle, SkipBack, SkipForward, Volume2 } from "lucide-react";
+import { AboutDialog } from "./about-dialog";
 import { usePlayer } from "./providers";
+import { ThemePicker } from "./theme-picker";
 import { formatTime } from "./types";
 import { DailyVisitStatus } from "./visit-counter";
 
 const links = [
-  { href: "/", label: "总览", glyph: "录", count: "6,414" },
-  { href: "/music", label: "仙乐集", glyph: "乐", count: "148" },
-  { href: "/sounds", label: "万籁库", glyph: "声", count: "6,266" },
+  { href: "/", label: "总览", icon: "overview" },
+  { href: "/music", label: "仙乐集", icon: "music" },
+  { href: "/sounds", label: "万籁库", icon: "sounds" },
 ];
+
+/** Per-theme icon variants; globals.css picks one from the root theme attributes, so there is no flash on load. */
+function railIconStyle(icon: string) {
+  return {
+    "--icon": `url(/icons/nav-${icon}.png)`,
+    "--icon-orange": `url(/icons/nav-${icon}-orange.png)`,
+    "--icon-dark": `url(/icons/nav-${icon}-dark.png)`,
+  } as CSSProperties;
+}
 
 function GlobalPlayer() {
   const player = usePlayer();
@@ -24,7 +36,7 @@ function GlobalPlayer() {
     <section className="global-player" aria-label="全局音乐播放器">
       <div className="player-track">
         <div className="album-index" aria-hidden="true">BGM</div>
-        <div className="track-meta"><strong>{player.current.title}</strong><span>{player.current.originalName}</span></div>
+        <div className="track-meta"><strong>{player.current.originalName}</strong></div>
       </div>
       <div className="player-center">
         <div className="player-buttons">
@@ -52,29 +64,28 @@ export function SiteShell({ children }: { children: React.ReactNode }) {
       <a className="skip-link" href="#archive-main">跳到资料正文</a>
       <header className="brand-bar">
         <Link href="/" className="brand" aria-label="寻仙音乐资料库首页">
-          <span className="brand-mark" aria-hidden="true">寻</span>
-          <span className="brand-copy">
-            <strong>寻仙音乐资料库</strong>
-            <small className="brand-version">v1.0.6</small>
-          </span>
+          <Image className="brand-mark" src="/icons/logo.png" alt="" width={38} height={38} unoptimized />
+          <strong className="brand-name">寻仙音乐资料库</strong>
         </Link>
         <div className="header-status">
-          <Link href="/about" className={`about-trigger${pathname === "/about" ? " active" : ""}`} aria-current={pathname === "/about" ? "page" : undefined}>关于网站</Link>
-          <span className="topbar-separator" aria-hidden="true">|</span>
-          <a className="topbar-resource-link" href="https://xunxian.wiki">资源总站</a>
-          <span className="topbar-separator" aria-hidden="true">|</span>
-          <DailyVisitStatus />
+          <span className="status-pill"><span className="dot" aria-hidden="true" /><DailyVisitStatus /></span>
         </div>
       </header>
-      <div className="resource-nav">
-        <nav className="resource-tabs" aria-label="资料库主导航">
-          {links.map(({ href, label, glyph, count }) => {
-            const active = pathname === href;
-            return <Link key={href} href={href} className={active ? "active" : ""} aria-current={active ? "page" : undefined}><span className="tab-glyph" aria-hidden="true">{glyph}</span><span className="tab-copy"><strong>{label}</strong><small>{count}</small></span></Link>;
-          })}
-        </nav>
+      <div className="workspace">
+        <aside className="rail">
+          <nav className="rail-nav" aria-label="资料库主导航">
+            {links.map(({ href, label, icon }) => {
+              const active = pathname === href;
+              return <Link key={href} href={href} className={`rail-item${active ? " is-active" : ""}`} aria-current={active ? "page" : undefined}><span className="rail-icon" style={railIconStyle(icon)} aria-hidden="true" /><span className="rail-label">{label}</span></Link>;
+            })}
+          </nav>
+          <div className="rail-footer">
+            <AboutDialog />
+            <ThemePicker />
+          </div>
+        </aside>
+        <main id="archive-main" className="main-content">{children}</main>
       </div>
-      <main id="archive-main" className="main-content">{children}</main>
       <GlobalPlayer />
     </div>
   );

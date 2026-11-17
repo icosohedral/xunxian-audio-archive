@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import "./globals.css";
 import { PlayerProvider } from "./providers";
 import { SiteShell } from "./site-shell";
+import { themeBootScript } from "./theme";
 import { VisitTracker } from "./visit-counter";
 
 export const metadata: Metadata = {
@@ -30,5 +31,5 @@ export const metadata: Metadata = {
 };
 
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
-  return <html lang="zh-CN"><head><link rel="icon" href="/favicon.svg" type="image/svg+xml" /></head><body><VisitTracker /><PlayerProvider><SiteShell>{children}</SiteShell></PlayerProvider></body></html>;
+  return <html lang="zh-CN" suppressHydrationWarning><head><link rel="icon" href="/icons/logo.png" type="image/png" sizes="64x64" /><link rel="apple-touch-icon" href="/icons/logo.png" /><script dangerouslySetInnerHTML={{ __html: themeBootScript }} /></head><body><VisitTracker /><PlayerProvider><SiteShell>{children}</SiteShell></PlayerProvider></body></html>;
 }

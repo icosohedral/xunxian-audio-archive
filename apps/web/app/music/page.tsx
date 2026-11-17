@@ -2,7 +2,10 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Braces, Check, ChevronDown, ChevronRight, CircleAlert, Download, Pause, Pencil, Play, Plus, Save, Search, Trash2, Upload, X } from "lucide-react";
+import { CategoryChips } from "../category-chips";
+import { EmptyResults } from "../empty-results";
 import { usePlayer } from "../providers";
+import { useSearchShortcut } from "../search-shortcut";
 import { formatTime, normalizeSearch, type Track } from "../types";
 
 const PAGE_SIZE = 30;
@@ -56,8 +59,9 @@ export default function MusicPage() {
   const [editingRuleId, setEditingRuleId] = useState<string | null>(null);
   const [rulePanelOpen, setRulePanelOpen] = useState(false);
   const [ruleListOpen, setRuleListOpen] = useState(false);
-  const [showAllCategories, setShowAllCategories] = useState(false);
   const importInputRef = useRef<HTMLInputElement | null>(null);
+  const searchInputRef = useRef<HTMLInputElement | null>(null);
+  const shortcutLabel = useSearchShortcut(searchInputRef);
   const player = usePlayer();
 
   useEffect(() => {
@@ -98,8 +102,6 @@ export default function MusicPage() {
     return counts;
   }, {}), [classified]);
   const tagNames = useMemo(() => [...new Set(rules.map((rule) => rule.name))].sort((left, right) => (categoryCounts[right] ?? 0) - (categoryCounts[left] ?? 0) || left.localeCompare(right, "zh-CN")), [rules, categoryCounts]);
-  const visibleTagNames = showAllCategories ? tagNames : tagNames.slice(0, 8);
-  const hiddenTagCount = Math.max(0, tagNames.length - 8);
   const filtered = useMemo(() => {
     const term = normalizeSearch(query);
     return classified.filter((track) => {
@@ -159,33 +161,31 @@ export default function MusicPage() {
 
   return (
     <div className="page library-page music-page">
-      <header className="topbar"><div><span className="eyebrow">MUSIC COLLECTION</span><h1>仙乐集</h1></div><span className="record-count">{tracks.length} 首曲目</span></header>
-      <section className="library-intro">
-        <div><span className="intro-kicker">寻仙世界背景音乐馆藏</span><h2>山川有声，昼夜成曲</h2><p>收录城镇、野外、副本与节庆场景音乐，让每一段悠长旋律都能按情境重新被唤起。</p></div>
-        <div className="collection-index" aria-label="馆藏编号 01"><span>COLLECTION</span><strong>01</strong></div>
-      </section>
+      <h1 className="visually-hidden">仙乐集</h1>
 
-      <section className="regex-panel">
-        <div className="regex-panel-heading"><button className="regex-panel-toggle" type="button" onClick={() => setRulePanelOpen((value) => !value)} aria-expanded={rulePanelOpen}>{rulePanelOpen ? <ChevronDown size={16} /> : <ChevronRight size={16} />}<Braces size={18} /><span><strong>正则分类规则</strong><small>使用正则匹配音乐原文件名</small></span></button></div>
-        {rulePanelOpen && <div className="regex-panel-body">
-          <form className="rule-form" onSubmit={submitRule}><label><span>标签名称</span><input value={ruleName} onChange={(event) => setRuleName(event.target.value)} placeholder="例如：城镇音乐" /></label><label className="pattern-field"><span>文件名正则</span><div><input value={rulePattern} onChange={(event) => setRulePattern(event.target.value)} placeholder="^world_ 或 /.*night.*$/i" /></div></label><div className="rule-form-actions"><button className="add-rule-button" type="submit">{editingRuleId ? <Save size={16} /> : <Plus size={16} />}{editingRuleId ? "保存修改" : "添加规则"}</button>{editingRuleId && <button className="cancel-edit-button" type="button" onClick={cancelEdit}><X size={15} />取消</button>}</div></form>
-          {ruleError && <p className="rule-error"><CircleAlert size={14} />{ruleError}</p>}{importMessage && <p className="import-success"><Check size={14} />{importMessage}</p>}
-          <div className="rule-hint">可输入正则内容，默认忽略大小写；完整的 <code>/.*night.*$/i</code> 形式也可直接使用。</div>
-          <div className="rule-list-heading"><button className="rule-list-toggle" type="button" onClick={() => setRuleListOpen((value) => !value)} aria-expanded={ruleListOpen}>{ruleListOpen ? <ChevronDown size={14} /> : <ChevronRight size={14} />}当前规则 <span>{rules.length}</span></button><div className="rule-file-actions"><button type="button" onClick={() => importInputRef.current?.click()}><Upload size={14} />导入 JSON</button><button type="button" onClick={exportRules} disabled={!rules.length}><Download size={14} />导出 JSON</button><input ref={importInputRef} className="visually-hidden" type="file" accept="application/json,.json" onChange={(event) => void importRules(event)} /></div></div>
-          {ruleListOpen && rules.length > 0 && <div className="rule-list">{rules.map((rule, index) => <div className={`rule-item ${editingRuleId === rule.id ? "editing" : ""}`} key={rule.id}><span className="rule-order">{index + 1}</span><strong>{rule.name}</strong><code>{displayRegex(rule)}</code><span>{categoryCounts[rule.name] ?? 0} 首</span><button onClick={() => editRule(rule)} aria-label={`编辑 ${rule.name} 规则`}><Pencil size={14} /></button><button onClick={() => { saveRules(rules.filter((item) => item.id !== rule.id)); if (editingRuleId === rule.id) cancelEdit(); }} aria-label={`删除 ${rule.name} 规则`}><Trash2 size={15} /></button></div>)}</div>}
-        </div>}
-      </section>
+      <section className="filter-card" aria-label="搜索与筛选">
+        <div className="toolbar"><label className="search-box"><Search size={18} /><input ref={searchInputRef} value={query} onChange={(event) => { setQuery(event.target.value); setPage(1); }} placeholder="搜索文件名或标签…" /><kbd>{shortcutLabel}</kbd></label><button className={`toolbar-button${rulePanelOpen ? " active" : ""}`} type="button" onClick={() => setRulePanelOpen((value) => !value)} aria-expanded={rulePanelOpen} aria-controls="music-rule-panel"><Braces size={16} />分类规则</button><span className="record-count">{filtered.length.toLocaleString()} / {tracks.length.toLocaleString()} 首</span></div>
+        {rulePanelOpen && <section className="regex-panel" id="music-rule-panel" aria-label="正则分类规则">
+          <div className="regex-panel-body">
+            <form className="rule-form" onSubmit={submitRule}><label><span>标签名称</span><input value={ruleName} onChange={(event) => setRuleName(event.target.value)} placeholder="例如：城镇音乐" /></label><label className="pattern-field"><span>文件名正则</span><div><input value={rulePattern} onChange={(event) => setRulePattern(event.target.value)} placeholder="^world_ 或 /.*night.*$/i" /></div></label><div className="rule-form-actions"><button className="add-rule-button" type="submit">{editingRuleId ? <Save size={16} /> : <Plus size={16} />}{editingRuleId ? "保存修改" : "添加规则"}</button>{editingRuleId && <button className="cancel-edit-button" type="button" onClick={cancelEdit}><X size={15} />取消</button>}</div></form>
+            {ruleError && <p className="rule-error"><CircleAlert size={14} />{ruleError}</p>}{importMessage && <p className="import-success"><Check size={14} />{importMessage}</p>}
+            <div className="rule-hint">可输入正则内容，默认忽略大小写；完整的 <code>/.*night.*$/i</code> 形式也可直接使用。</div>
+            <div className="rule-list-heading"><button className="rule-list-toggle" type="button" onClick={() => setRuleListOpen((value) => !value)} aria-expanded={ruleListOpen}>{ruleListOpen ? <ChevronDown size={14} /> : <ChevronRight size={14} />}当前规则 <span>{rules.length}</span></button><div className="rule-file-actions"><button type="button" onClick={() => importInputRef.current?.click()}><Upload size={14} />导入 JSON</button><button type="button" onClick={exportRules} disabled={!rules.length}><Download size={14} />导出 JSON</button><input ref={importInputRef} className="visually-hidden" type="file" accept="application/json,.json" onChange={(event) => void importRules(event)} /></div></div>
+            {ruleListOpen && rules.length > 0 && <div className="rule-list">{rules.map((rule, index) => <div className={`rule-item ${editingRuleId === rule.id ? "editing" : ""}`} key={rule.id}><span className="rule-order">{index + 1}</span><strong>{rule.name}</strong><code>{displayRegex(rule)}</code><span>{categoryCounts[rule.name] ?? 0} 首</span><button onClick={() => editRule(rule)} aria-label={`编辑 ${rule.name} 规则`}><Pencil size={14} /></button><button onClick={() => { saveRules(rules.filter((item) => item.id !== rule.id)); if (editingRuleId === rule.id) cancelEdit(); }} aria-label={`删除 ${rule.name} 规则`}><Trash2 size={15} /></button></div>)}</div>}
+          </div>
+        </section>}
 
-      <div className="toolbar"><label className="search-box"><Search size={18} /><input value={query} onChange={(event) => { setQuery(event.target.value); setPage(1); }} placeholder="搜索曲名、文件名或标签…" /><kbd>⌘ K</kbd></label></div>
-      <div className="filter-chips"><button className={category === "all" ? "active" : ""} onClick={() => { setCategory("all"); setPage(1); }}>全部 <span>{classified.length}</span></button>{visibleTagNames.map((tag) => <button key={tag} className={category === tag ? "active" : ""} onClick={() => { setCategory(tag); setPage(1); }}>{tag} <span>{categoryCounts[tag] ?? 0}</span></button>)}<button className={category === "未分类" ? "active" : ""} onClick={() => { setCategory("未分类"); setPage(1); }}>未分类 <span>{categoryCounts["未分类"] ?? 0}</span></button>{hiddenTagCount > 0 && <button className={`chip-toggle ${showAllCategories ? "expanded" : ""}`} type="button" onClick={() => setShowAllCategories((value) => !value)} aria-expanded={showAllCategories}><ChevronDown size={13} />{showAllCategories ? "收起标签" : `展开 ${hiddenTagCount} 个`}</button>}</div>
+        <CategoryChips tags={tagNames} counts={categoryCounts} total={classified.length} category={category} onSelect={(value) => { setCategory(value); setPage(1); }} />
+      </section>
       <section className="track-table" aria-label="背景音乐列表">
         <div className="track-row track-head"><span>#</span><span>曲目</span><span>标签</span><span>时长</span><span /></div>
         {visible.map((track, index) => {
           const active = player.current?.id === track.id;
-          return <div className={`track-row ${active ? "playing" : ""}`} key={track.id}><button className="music-index" onClick={() => choose(track)}>{active && player.loading ? <span className="audio-spinner" /> : active ? <i className="playing-bars"><b /><b /><b /></i> : String((page - 1) * PAGE_SIZE + index + 1).padStart(2, "0")}</button><button className="track-name" onClick={() => choose(track)}><strong>{track.title}</strong><small>{track.originalName}</small></button><span className="music-tags">{track.matchedCategories.slice(0, 4).map((tag) => <button className="category-tag matched" key={tag} onClick={() => { setCategory(tag); setPage(1); }}>{tag}</button>)}{!track.matchedCategories.length && <button className="category-tag" onClick={() => { setCategory("未分类"); setPage(1); }}>未分类</button>}{track.matchedCategories.length > 4 && <span className="more-tags">+{track.matchedCategories.length - 4}</span>}</span><span>{formatTime(track.durationMs)}</span><button className="row-play" onClick={() => choose(track)} aria-label={active && player.loading ? "正在载入" : active && player.playing ? "暂停" : "播放"} aria-busy={active && player.loading}>{active && player.loading ? <span className="audio-spinner" /> : active && player.playing ? <Pause size={15} /> : <Play size={15} fill="currentColor" />}</button></div>;
+          return <div className={`track-row ${active ? "playing" : ""}`} key={track.id}><button className="music-index" onClick={() => choose(track)}>{active && player.loading ? <span className="audio-spinner" /> : active ? <i className="playing-bars"><b /><b /><b /></i> : String((page - 1) * PAGE_SIZE + index + 1).padStart(2, "0")}</button><button className="track-name" onClick={() => choose(track)}><strong>{track.originalName}</strong></button><span className="music-tags">{track.matchedCategories.slice(0, 4).map((tag) => <button className="category-tag matched" key={tag} onClick={() => { setCategory(tag); setPage(1); }}>{tag}</button>)}{track.matchedCategories.length > 4 && <span className="more-tags">+{track.matchedCategories.length - 4}</span>}</span><span>{formatTime(track.durationMs)}</span><button className="row-play" onClick={() => choose(track)} aria-label={active && player.loading ? "正在载入" : active && player.playing ? "暂停" : "播放"} aria-busy={active && player.loading}>{active && player.loading ? <span className="audio-spinner" /> : active && player.playing ? <Pause size={15} /> : <Play size={15} fill="currentColor" />}</button></div>;
         })}
+        {tracks.length > 0 && !filtered.length && <EmptyResults onReset={() => { setQuery(""); setCategory("all"); setPage(1); }} />}
       </section>
-      <div className="pagination"><button disabled={page === 1} onClick={() => setPage(page - 1)}>上一页</button><span>第 {page} / {pages} 页</span><button disabled={page === pages} onClick={() => setPage(page + 1)}>下一页</button></div>
+      {pages > 1 && <div className="pagination"><button disabled={page === 1} onClick={() => setPage(page - 1)}>上一页</button><span>第 {page} / {pages} 页</span><button disabled={page === pages} onClick={() => setPage(page + 1)}>下一页</button></div>}
     </div>
   );
 }

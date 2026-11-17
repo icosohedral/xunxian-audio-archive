@@ -2,6 +2,7 @@ import { createHash } from "node:crypto";
 import { readdir, stat, mkdir, readFile, writeFile } from "node:fs/promises";
 import { extname, join, resolve } from "node:path";
 import { parseFile } from "music-metadata";
+import { summarizeMedia } from "./catalog-summary.mjs";
 
 const root = resolve(import.meta.dirname, "..");
 const sourceRoot = join(root, "original_data");
@@ -149,6 +150,7 @@ const summary = {
   version: 1,
   generatedAt: new Date().toISOString(),
   counts: { music: music.length, sound: sound.length, total: music.length + sound.length },
+  ...summarizeMedia(music, sound),
   categoryCounts,
 };
 await Promise.all([

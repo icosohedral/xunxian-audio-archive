@@ -1,44 +1,28 @@
-import Link from "next/link";
-import { ArrowRight } from "lucide-react";
+import Image from "next/image";
+import { AudioLines, Disc3, Music2 } from "lucide-react";
+import { catalog, formatCount, formatHours, formatMiB } from "./catalog";
 
-const categories = [
-  ["RULES", "正则分类", "按文件名规则建立自己的分类"],
-  ["SEARCH", "即时检索", "搜索全部 6,266 条游戏音效"],
-  ["PREVIEW", "原声试听", "在线试听 Opus 与 MP3 音频"],
-  ["LOCAL", "规则留存", "分类规则保存在当前浏览器"],
+const { counts, durationMs, bytes } = catalog;
+
+const stats = [
+  { icon: Disc3, label: "全部音频", value: formatCount(counts.total), hint: `共 ${formatHours(durationMs.total)} 小时 · ${formatMiB(bytes.total)} MiB` },
+  { icon: Music2, label: "背景音乐", value: formatCount(counts.music), hint: `${formatHours(durationMs.music)} 小时` },
+  { icon: AudioLines, label: "游戏音效", value: formatCount(counts.sound), hint: `${formatHours(durationMs.sound)} 小时` },
 ];
 
 export default function Home() {
   return (
     <div className="page home-page">
-      <header className="topbar"><div><span className="eyebrow">XUNXIAN AUDIO ARCHIVE</span><h1>总览</h1></div></header>
-      <section className="overview-hero">
-        <div className="overview-copy">
-          <span className="eyebrow">A TRACEABLE AUDIO ARCHIVE</span>
-          <h2>让每一段声音，<br />都能被重新听见。</h2>
-          <p>从城镇晨钟到战斗剑鸣，将散落在《寻仙》世界里的背景音乐与游戏音效，重新编目、检索与聆听。</p>
-          <strong className="overview-kicker">循声入卷，听见山川与人间。</strong>
-          <div className="hero-actions"><Link className="primary-button" href="/music">浏览仙乐集 <ArrowRight size={16} /></Link><Link className="text-button" href="/sounds">检索万籁库 <ArrowRight size={16} /></Link></div>
+      <h1 className="visually-hidden">总览</h1>
+      <section className="library-intro">
+        <div>
+          <h2>在中国神话与人间烟火之间寻仙</h2>
+          <p>《寻仙》是由北京像素软件开发、腾讯运营的中国神话题材 3D MMORPG，以中国美术片风格构筑了一个有神仙妖怪、法宝灵兽，也有城镇村落与市井人情的东方世界。音乐与音效记录了其中的昼夜、地域、职业与剧情变化，本资料库希望让这些散落的声音重新变得可检索、可聆听。</p>
         </div>
-        <span className="hero-watermark" aria-hidden="true">录</span>
-        <aside className="archive-ledger" aria-label="资料库索引摘要">
-          <span className="ledger-id">ARCHIVE / XA–01</span>
-          <dl>
-            <div><dt>馆藏对象</dt><dd>背景音乐 · 游戏音效</dd></div>
-            <div><dt>主要能力</dt><dd>检索 · 分类 · 试听</dd></div>
-            <div><dt>数据规模</dt><dd><strong>6,414</strong> 条记录</dd></div>
-          </dl>
-        </aside>
+        <Image className="library-intro-art" src="/images/intro-sea.webp" alt="" width={676} height={520} priority unoptimized />
       </section>
       <section className="stat-grid">
-        <article><span>全部音频</span><strong>6,414</strong><small>OGG / WAV · 586.5 MiB</small></article>
-        <article><span>背景音乐</span><strong>148</strong><small>OGG · 4.46 小时</small></article>
-        <article><span>游戏音效</span><strong>6,266</strong><small>OGG / WAV · 4.86 小时</small></article>
-        <article><span>总时长</span><strong>9.32</strong><small>小时 · BGM 4.46 + 音效 4.86</small></article>
-      </section>
-      <section className="section-block">
-        <div className="section-heading"><div><span className="eyebrow">CUSTOM ORGANIZATION</span><h2>自定义整理</h2></div><Link href="/sounds">打开万籁库 <ArrowRight size={16} /></Link></div>
-        <div className="category-grid">{categories.map(([label, title, copy]) => <Link href="/sounds" key={title} className="category-card"><span className="feature-label">{label}</span><div><h3>{title}</h3><p>{copy}</p></div><ArrowRight size={18} /></Link>)}</div>
+        {stats.map(({ icon: Icon, label, value, hint }) => <article key={label}><span><Icon size={14} aria-hidden="true" />{label}</span><strong>{value}</strong><small>{hint}</small></article>)}
       </section>
     </div>
   );

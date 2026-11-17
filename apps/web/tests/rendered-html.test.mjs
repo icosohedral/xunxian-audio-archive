@@ -23,14 +23,20 @@ test("renders the archive homepage", async () => {
 });
 
 test("renders all archive routes", async () => {
-  for (const pathname of ["/music", "/sounds", "/about"]) {
+  for (const pathname of ["/music", "/sounds"]) {
     const response = await render(pathname);
     assert.equal(response.status, 200, pathname);
   }
 });
 
+test("redirects the retired about page to the homepage", async () => {
+  const response = await render("/about");
+  assert.equal(response.status, 301);
+  assert.equal(response.headers.get("Location"), "http://localhost/");
+});
+
 test("publishes canonical metadata and crawler discovery files", async () => {
-  for (const [pathname, canonical] of [["/", "/"], ["/music", "/music"], ["/sounds", "/sounds"], ["/about", "/about"]]) {
+  for (const [pathname, canonical] of [["/", "/"], ["/music", "/music"], ["/sounds", "/sounds"]]) {
     const response = await render(pathname);
     const html = await response.text();
     assert.match(html, new RegExp(`<link rel="canonical" href="https://music\\.xunxian\\.wiki${canonical === "/" ? "/?" : canonical}"`), pathname);

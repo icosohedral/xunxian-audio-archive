@@ -53,6 +53,18 @@ function productionRedirect(url: URL) {
   });
 }
 
+// The about page was folded into the home page and the version dialog; keep old links working.
+function retiredPageRedirect(url: URL) {
+  if (url.pathname !== "/about" && url.pathname !== "/about/") return null;
+  return new Response(null, {
+    status: 301,
+    headers: {
+      "Cache-Control": "public, max-age=3600",
+      Location: new URL("/", url).toString(),
+    },
+  });
+}
+
 function withSecurityHeaders(response: Response, url: URL) {
   const headers = new Headers(response.headers);
   headers.set("Content-Security-Policy", CONTENT_SECURITY_POLICY);
@@ -81,6 +93,9 @@ const worker = {
   async fetch(request: Request, env: Env, ctx: ExecutionContext): Promise<Response> {
     const url = new URL(request.url);
     if (url.hostname.endsWith(".workers.dev")) return productionRedirect(url);
+
+    const retired = retiredPageRedirect(url);
+    if (retired) return withSecurityHeaders(retired, url);
 
     const audioResponse = await routeAudioRequest(request, env, ctx);
     if (audioResponse) return withSecurityHeaders(audioResponse, url);
