@@ -3,7 +3,7 @@
 import { useRef } from "react";
 import { Compass, Github } from "lucide-react";
 
-export const ARCHIVE_VERSION = "v1.0.6";
+export const ARCHIVE_VERSION = "v1.1.0";
 
 /** The rail's version number; clicking it opens the about dialog (same layout as the GM workbench's). */
 export function AboutDialog() {
