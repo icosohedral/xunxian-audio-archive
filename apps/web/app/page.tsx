@@ -20,6 +20,8 @@ export default function Home() {
           <p>《寻仙》是由北京像素软件开发、腾讯运营的中国神话题材 3D MMORPG，以中国美术片风格构筑了一个有神仙妖怪、法宝灵兽，也有城镇村落与市井人情的东方世界。音乐与音效记录了其中的昼夜、地域、职业与剧情变化，本资料库希望让这些散落的声音重新变得可检索、可聆听。</p>
         </div>
         <Image className="library-intro-art" src="/images/intro-sea.webp" alt="" width={676} height={520} priority unoptimized />
+        {/* 深色主题换夜晚版（27KB）；直接加载，避免切到深色时空白一下 */}
+        <Image className="library-intro-art library-intro-art-night" src="/images/intro-sea-night.webp" alt="" width={676} height={520} loading="eager" unoptimized />
       </section>
       <section className="stat-grid">
         {stats.map(({ icon: Icon, label, value, hint }) => <article key={label}><span><Icon size={14} aria-hidden="true" />{label}</span><strong>{value}</strong><small>{hint}</small></article>)}
