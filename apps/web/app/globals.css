@@ -150,15 +150,8 @@ summary:focus-visible {
   height: 38px;
   flex: 0 0 38px;
   display: block;
-  box-sizing: border-box;
-  padding: 3px;
   object-fit: contain;
-  border: 1px solid var(--accent-line);
-  border-radius: 10px;
-  background: var(--mint);
 }
-/* 深色下 logo 的红金蓝在深棕底上发闷，改用米色底板让它跳出来 */
-:root[data-mode="dark"] .brand-mark { border-color: #e6d2c3; background: #e6d2c3; }
 .brand-name { font: 600 16px/1.2 var(--font-display); white-space: nowrap; }
 
 .header-status { display: flex; align-items: center; gap: 8px; }
@@ -334,13 +327,11 @@ summary:focus-visible {
 
 .main-content {
   min-width: 0;
-  padding: 0 4px var(--player-space) 6px;
+  padding: 0 0 var(--player-space) 3px;
 }
 /* 没有播放器时不预留底部空白，页面正好一屏 */
 .app-shell:not(.has-player) .main-content { padding-bottom: 0; }
 .page {
-  max-width: 1200px;
-  margin: 0 auto;
   animation: page-enter .24s ease-out both;
 }
 @keyframes page-enter {
@@ -1166,7 +1157,7 @@ summary:focus-visible {
 
 @media (max-width: 400px) {
   .brand-name { font-size: 14px; }
-  .brand-mark { width: 34px; height: 34px; flex-basis: 34px; padding: 2px; }
+  .brand-mark { width: 34px; height: 34px; flex-basis: 34px; }
   .topbar-visitors { font-size: 0; }
   .topbar-visitors strong { font-size: 11px; }
 }

@@ -12,7 +12,7 @@ function GithubMark() {
   );
 }
 
-export const ARCHIVE_VERSION = "v1.1.4";
+export const ARCHIVE_VERSION = "v1.1.5";
 
 /** The rail's version number; clicking it opens the about dialog (same layout as the GM workbench's). */
 export function AboutDialog() {
