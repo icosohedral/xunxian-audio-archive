@@ -167,23 +167,23 @@ summary:focus-visible {
   padding: 0 11px;
   display: inline-flex;
   align-items: center;
-  gap: 7px;
+  gap: 6px;
   border: 1px solid var(--line);
   border-radius: 99px;
-  color: var(--pine);
+  color: var(--ink-soft);
   background: var(--field);
   font-size: 12px;
-  font-weight: 700;
+  font-weight: 650;
   white-space: nowrap;
 }
 .status-pill .dot {
   width: 6px;
   height: 6px;
   border-radius: 50%;
-  background: var(--ok);
-  box-shadow: 0 0 0 3px color-mix(in srgb, var(--ok) 16%, transparent);
+  background: var(--jade);
+  box-shadow: 0 0 0 3px var(--mint);
 }
-.topbar-visitors strong { color: var(--ink); font-variant-numeric: tabular-nums; }
+.topbar-visitors strong { color: var(--pine); font-weight: 800; font-variant-numeric: tabular-nums; }
 .visit-placeholder { color: var(--ink-faint); }
 
 .workspace {
@@ -273,9 +273,9 @@ summary:focus-visible {
 :root[data-mode="dark"] .about-dialog::backdrop { background: rgba(0, 0, 0, .6); }
 .about-dialog[open] { animation: dialog-in .18s ease-out; }
 @keyframes dialog-in { from { opacity: 0; transform: translateY(8px) scale(.98); } to { opacity: 1; transform: none; } }
-/* 与 GM 工作台的「关于」弹窗一致：标题 + 信息行 + 说明 + 底部按钮 */
-.about-dialog-head { margin: 0; padding: 16px 18px 0; font: 600 15px/1.4 var(--font-display); }
-.about-dialog-body { padding: 10px 18px 16px; display: grid; grid-template-columns: minmax(0, 1fr); gap: 8px; color: var(--ink-soft); font-size: 12px; line-height: 1.75; }
+/* 与寻仙资源存档的「关于」弹窗一致：标题 + 信息行 + 说明 + 底部按钮 */
+.about-dialog-head { margin: 0; padding: 16px 18px 0; font: 700 15px/1.4 var(--font-display); }
+.about-dialog-body { padding: 12px 18px 16px; display: grid; grid-template-columns: minmax(0, 1fr); gap: 8px; color: var(--ink-soft); font-size: 12px; line-height: 1.6; }
 .about-row {
   padding: 10px 12px;
   display: flex;
@@ -285,17 +285,19 @@ summary:focus-visible {
   border-radius: 10px;
   background: var(--field);
 }
-.about-row svg { flex: none; color: var(--ink-soft); }
+.about-row svg { flex: 0 0 16px; width: 16px; height: 16px; color: var(--ink-soft); }
+.about-row svg.is-fill { fill: currentColor; }
 .about-label { flex: none; color: var(--ink-soft); font-size: 12px; font-weight: 650; }
-.about-row a { min-width: 0; color: var(--pine); font-weight: 650; overflow-wrap: anywhere; }
+.about-row a { min-width: 0; color: var(--pine); font-size: 13px; font-weight: 650; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
 .about-row a:hover { text-decoration: underline; }
 .about-notice {
-  margin: 4px 0 0;
+  margin: 0;
   padding: 10px 12px;
   border: 1px solid var(--line);
   border-radius: 10px;
   color: var(--ink-soft);
   background: var(--field);
+  line-height: 1.7;
 }
 .about-dialog-foot {
   padding: 12px 18px;
