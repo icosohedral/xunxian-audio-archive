@@ -59,8 +59,9 @@ function GlobalPlayer() {
 
 export function SiteShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
+  const hasPlayer = Boolean(usePlayer().current);
   return (
-    <div className="app-shell">
+    <div className={`app-shell${hasPlayer ? " has-player" : ""}`}>
       <a className="skip-link" href="#archive-main">跳到资料正文</a>
       <header className="brand-bar">
         <Link href="/" className="brand" aria-label="寻仙音乐资料库首页">

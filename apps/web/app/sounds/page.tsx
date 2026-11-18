@@ -4,10 +4,13 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Braces, Check, ChevronDown, ChevronRight, CircleAlert, Copy, Download, Pause, Pencil, Play, Plus, RotateCcw, Save, Search, SlidersHorizontal, Trash2, Upload, X } from "lucide-react";
 import { CategoryChips } from "../category-chips";
 import { EmptyResults } from "../empty-results";
+import { useFitPageSize } from "../fit-page-size";
+import { Pagination } from "../pagination";
 import { useSearchShortcut } from "../search-shortcut";
 import { formatTime, normalizeSearch, resolveAudioUrl, selectPlayableAudioKey, type Track } from "../types";
 
-const PAGE_SIZE = 100;
+/** Page size on narrow screens, where the list scrolls with the page. */
+const FALLBACK_PAGE_SIZE = 100;
 const RULES_KEY = "xunxian-sound-category-rules-v1";
 const DURATION_FILTER_KEY = "xunxian-sound-duration-filter-v1";
 
@@ -200,8 +203,13 @@ export default function SoundsPage() {
       return matchesCategory && (!term || normalizeSearch(`${sound.title} ${sound.originalName} ${sound.matchedCategories.join(" ")}`).includes(term));
     });
   }, [durationFiltered, query, category]);
-  const pages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
-  const visible = filtered.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
+  // 桌面端每页条数 = 列表卡片里能完整放下的行数，不出现滚动
+  const listRef = useRef<HTMLDivElement | null>(null);
+  const pageSize = useFitPageSize(listRef, ".sound-card", FALLBACK_PAGE_SIZE, filtered.length > 0);
+  const pages = Math.max(1, Math.ceil(filtered.length / pageSize));
+  const currentPage = Math.min(page, pages);
+  const visible = filtered.slice((currentPage - 1) * pageSize, currentPage * pageSize);
+  useEffect(() => { listRef.current?.scrollTo({ top: 0 }); }, [currentPage, filtered]);
 
   function saveRules(nextRules: CategoryRule[]) {
     setRules(nextRules);
@@ -363,7 +371,8 @@ export default function SoundsPage() {
         <CategoryChips tags={sortedTagNames} counts={categoryCounts} total={durationFiltered.length} category={category} onSelect={(value) => { setCategory(value); setPage(1); }} />
       </section>
       {error && <div className="inline-error" role="alert"><CircleAlert size={17} />音效加载失败，请稍后重试。</div>}
-      <section className="sound-grid" aria-label="音效列表">
+      <section className="list-card" aria-label="音效列表">
+        <div ref={listRef} className="list-scroll sound-grid">
         {visible.map((sound) => {
           const active = activeId === sound.id;
           const visibleTags = sound.matchedCategories.slice(0, 1);
@@ -372,8 +381,9 @@ export default function SoundsPage() {
           return <div className={`sound-card ${active ? "active" : ""}`} key={sound.id}><button className="sound-play" onClick={() => void preview(sound)} aria-label={loading ? `正在载入 ${sound.originalName}` : `试听 ${sound.originalName}`} aria-busy={loading}>{loading ? <span className="audio-spinner" /> : active && playing ? <Pause size={17} /> : active ? <RotateCcw size={17} /> : <Play size={17} fill="currentColor" />}</button><button className="sound-info" onClick={() => void preview(sound)} title="点击试听"><strong>{sound.originalName}</strong></button><span className="category-tags">{visibleTags.map((tag) => <button className="category-tag matched" key={tag} onClick={() => { setCategory(tag); setPage(1); }} title={`筛选标签：${tag}`}>{tag}</button>)}{sound.matchedCategories.length > 1 && <span className="more-tags" title={sound.matchedCategories.slice(1).join("、")}>+{sound.matchedCategories.length - 1}</span>}</span><span className="sound-duration">{formatTime(sound.durationMs)}</span><button className={`copy-filename ${copied ? "copied" : ""}`} onClick={() => void copyFilename(sound)} aria-label={`复制文件名 ${sound.originalName}`} title={copied ? "已复制" : "复制文件名"}>{copied ? <Check size={15} /> : <Copy size={15} />}</button></div>;
         })}
         {sounds.length > 0 && !filtered.length && <EmptyResults onReset={() => { setQuery(""); setCategory("all"); setPage(1); }} />}
+        </div>
+        <Pagination page={currentPage} pages={pages} onChange={setPage} note={<> · 每页 {pageSize} 条</>} />
       </section>
-      {pages > 1 && <div className="pagination"><button disabled={page === 1} onClick={() => setPage(page - 1)}>上一页</button><span>第 {page} / {pages} 页 · 每页最多 {PAGE_SIZE} 条</span><button disabled={page === pages} onClick={() => setPage(page + 1)}>下一页</button></div>}
     </div>
   );
 }

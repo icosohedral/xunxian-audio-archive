@@ -4,11 +4,14 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { Braces, Check, ChevronDown, ChevronRight, CircleAlert, Download, Pause, Pencil, Play, Plus, Save, Search, Trash2, Upload, X } from "lucide-react";
 import { CategoryChips } from "../category-chips";
 import { EmptyResults } from "../empty-results";
+import { useFitPageSize } from "../fit-page-size";
+import { Pagination } from "../pagination";
 import { usePlayer } from "../providers";
 import { useSearchShortcut } from "../search-shortcut";
 import { formatTime, normalizeSearch, type Track } from "../types";
 
-const PAGE_SIZE = 30;
+/** Page size on narrow screens, where the list scrolls with the page. */
+const FALLBACK_PAGE_SIZE = 30;
 const RULES_KEY = "xunxian-music-category-rules-v1";
 
 type MusicRule = { id: string; name: string; pattern: string; flags?: string };
@@ -109,8 +112,13 @@ export default function MusicPage() {
       return matchesCategory && (!term || normalizeSearch(`${track.title} ${track.originalName} ${track.matchedCategories.join(" ")}`).includes(term));
     });
   }, [classified, query, category]);
-  const pages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
-  const visible = filtered.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
+  // 桌面端每页条数 = 列表卡片里能完整放下的行数，不出现滚动
+  const listRef = useRef<HTMLDivElement | null>(null);
+  const pageSize = useFitPageSize(listRef, ".track-row:not(.track-head)", FALLBACK_PAGE_SIZE, filtered.length > 0);
+  const pages = Math.max(1, Math.ceil(filtered.length / pageSize));
+  const currentPage = Math.min(page, pages);
+  const visible = filtered.slice((currentPage - 1) * pageSize, currentPage * pageSize);
+  useEffect(() => { listRef.current?.scrollTo({ top: 0 }); }, [currentPage, filtered]);
 
   function saveRules(nextRules: MusicRule[]) {
     setRules(nextRules);
@@ -177,15 +185,17 @@ export default function MusicPage() {
 
         <CategoryChips tags={tagNames} counts={categoryCounts} total={classified.length} category={category} onSelect={(value) => { setCategory(value); setPage(1); }} />
       </section>
-      <section className="track-table" aria-label="背景音乐列表">
+      <section className="list-card track-table" aria-label="背景音乐列表">
+        <div ref={listRef} className="list-scroll">
         <div className="track-row track-head"><span>#</span><span>曲目</span><span>标签</span><span>时长</span><span /></div>
         {visible.map((track, index) => {
           const active = player.current?.id === track.id;
-          return <div className={`track-row ${active ? "playing" : ""}`} key={track.id}><button className="music-index" onClick={() => choose(track)}>{active && player.loading ? <span className="audio-spinner" /> : active ? <i className="playing-bars"><b /><b /><b /></i> : String((page - 1) * PAGE_SIZE + index + 1).padStart(2, "0")}</button><button className="track-name" onClick={() => choose(track)}><strong>{track.originalName}</strong></button><span className="music-tags">{track.matchedCategories.slice(0, 4).map((tag) => <button className="category-tag matched" key={tag} onClick={() => { setCategory(tag); setPage(1); }}>{tag}</button>)}{track.matchedCategories.length > 4 && <span className="more-tags">+{track.matchedCategories.length - 4}</span>}</span><span>{formatTime(track.durationMs)}</span><button className="row-play" onClick={() => choose(track)} aria-label={active && player.loading ? "正在载入" : active && player.playing ? "暂停" : "播放"} aria-busy={active && player.loading}>{active && player.loading ? <span className="audio-spinner" /> : active && player.playing ? <Pause size={15} /> : <Play size={15} fill="currentColor" />}</button></div>;
+          return <div className={`track-row ${active ? "playing" : ""}`} key={track.id}><button className="music-index" onClick={() => choose(track)}>{active && player.loading ? <span className="audio-spinner" /> : active ? <i className="playing-bars"><b /><b /><b /></i> : String((currentPage - 1) * pageSize + index + 1).padStart(2, "0")}</button><button className="track-name" onClick={() => choose(track)}><strong>{track.originalName}</strong></button><span className="music-tags">{track.matchedCategories.slice(0, 4).map((tag) => <button className="category-tag matched" key={tag} onClick={() => { setCategory(tag); setPage(1); }}>{tag}</button>)}{track.matchedCategories.length > 4 && <span className="more-tags">+{track.matchedCategories.length - 4}</span>}</span><span>{formatTime(track.durationMs)}</span><button className="row-play" onClick={() => choose(track)} aria-label={active && player.loading ? "正在载入" : active && player.playing ? "暂停" : "播放"} aria-busy={active && player.loading}>{active && player.loading ? <span className="audio-spinner" /> : active && player.playing ? <Pause size={15} /> : <Play size={15} fill="currentColor" />}</button></div>;
         })}
         {tracks.length > 0 && !filtered.length && <EmptyResults onReset={() => { setQuery(""); setCategory("all"); setPage(1); }} />}
+        </div>
+        <Pagination page={currentPage} pages={pages} onChange={setPage} />
       </section>
-      {pages > 1 && <div className="pagination"><button disabled={page === 1} onClick={() => setPage(page - 1)}>上一页</button><span>第 {page} / {pages} 页</span><button disabled={page === pages} onClick={() => setPage(page + 1)}>下一页</button></div>}
     </div>
   );
 }

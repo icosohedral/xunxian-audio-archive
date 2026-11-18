@@ -3,7 +3,7 @@
 import { useRef } from "react";
 import { Compass, Github } from "lucide-react";
 
-export const ARCHIVE_VERSION = "v1.1.2";
+export const ARCHIVE_VERSION = "v1.1.3";
 
 /** The rail's version number; clicking it opens the about dialog (same layout as the GM workbench's). */
 export function AboutDialog() {
@@ -24,7 +24,7 @@ export function AboutDialog() {
           <div className="about-row">
             <Github size={16} aria-hidden="true" />
             <span className="about-label">项目地址</span>
-            <a href="https://github.com/icosohedral/xunxian-audio-archive" target="_blank" rel="noopener noreferrer">github.com/icosohedral/xunxian-audio-archive</a>
+            <a href="https://github.com/icosohedral/xunxian-audio-archive" target="_blank" rel="noopener noreferrer" title="github.com/icosohedral/xunxian-audio-archive">xunxian-audio-archive</a>
           </div>
           <div className="about-row">
             <Compass size={16} aria-hidden="true" />
