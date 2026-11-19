@@ -1,11 +1,11 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 
-async function render(pathname = "/", origin = "http://localhost") {
+async function render(pathname = "/", origin = "http://localhost", headers = {}) {
   const workerUrl = new URL("../dist/server/index.js", import.meta.url);
   workerUrl.searchParams.set("test", `${process.pid}-${Date.now()}`);
   const { default: worker } = await import(workerUrl.href);
-  return worker.fetch(new Request(new URL(pathname, origin), { headers: { accept: "text/html" } }), {
+  return worker.fetch(new Request(new URL(pathname, origin), { headers: { accept: "text/html", ...headers } }), {
     ASSETS: { fetch: async () => new Response("Not found", { status: 404 }) },
   }, { waitUntil() {}, passThroughOnException() {} });
 }
@@ -64,4 +64,22 @@ test("adds production security headers and redirects the legacy host", async () 
   const legacy = await render("/music?from=legacy", "https://xunxian-web.catcher-in-the-rye-v.workers.dev");
   assert.equal(legacy.status, 308);
   assert.equal(legacy.headers.get("Location"), "https://music.xunxian.wiki/music?from=legacy");
+});
+
+test("renders English for English browsers and keeps a saved language choice", async () => {
+  const english = await (await render("/music", undefined, { "accept-language": "en-US,en;q=0.9" })).text();
+  assert.match(english, /<html lang="en"/);
+  assert.match(english, /<title>Music \| Xunxian Music Archive<\/title>/);
+  assert.match(english, /Search file names or tags/);
+
+  const chineseBrowser = await (await render("/", undefined, { "accept-language": "zh-CN,zh;q=0.9,en;q=0.8" })).text();
+  assert.match(chineseBrowser, /<html lang="zh-CN"/);
+  assert.match(chineseBrowser, /今日来访/);
+
+  const savedChinese = await (await render("/", undefined, { "accept-language": "en-US", cookie: "xunxian-locale=zh" })).text();
+  assert.match(savedChinese, /<title>寻仙音乐资料库/);
+
+  const savedEnglish = await (await render("/sounds", undefined, { cookie: "xunxian-locale=en" })).text();
+  assert.match(savedEnglish, /<title>Sounds \| Xunxian Music Archive<\/title>/);
+  assert.match(savedEnglish, /Visits today/);
 });

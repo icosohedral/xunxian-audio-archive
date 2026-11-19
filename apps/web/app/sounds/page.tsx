@@ -7,6 +7,8 @@ import { EmptyResults } from "../empty-results";
 import { useFitPageSize } from "../fit-page-size";
 import { Pagination } from "../pagination";
 import { useSearchShortcut } from "../search-shortcut";
+import { UNCATEGORIZED, type Messages } from "../i18n";
+import { useLocale } from "../locale-provider";
 import { formatTime, normalizeSearch, resolveAudioUrl, selectPlayableAudioKey, type Track } from "../types";
 
 /** Page size on narrow screens, where the list scrolls with the page. */
@@ -33,21 +35,21 @@ function displayRegex(rule: CategoryRule) {
   return `/${rule.pattern}/${rule.flags ?? "i"}`;
 }
 
-function parseRulesPayload(value: unknown) {
-  if (!value || typeof value !== "object") throw new Error("文件内容不是有效对象");
+function parseRulesPayload(value: unknown, errors: Messages["library"]["errors"]) {
+  if (!value || typeof value !== "object") throw new Error(errors.notObject);
   const payload = value as { format?: unknown; version?: unknown; rules?: unknown };
   if (payload.format !== "xunxian-sound-category-rules" || payload.version !== 1 || !Array.isArray(payload.rules)) {
-    throw new Error("文件格式或版本不受支持");
+    throw new Error(errors.unsupported);
   }
   return payload.rules.map((value, index) => {
-    if (!value || typeof value !== "object") throw new Error(`第 ${index + 1} 条规则格式无效`);
+    if (!value || typeof value !== "object") throw new Error(errors.ruleInvalid(index + 1));
     const item = value as Record<string, unknown>;
     const name = typeof item.name === "string" ? item.name.trim() : "";
     const pattern = typeof item.pattern === "string" ? item.pattern : "";
     const flags = typeof item.flags === "string" ? item.flags : "i";
-    if (!name || !pattern) throw new Error(`第 ${index + 1} 条规则缺少名称或正则`);
+    if (!name || !pattern) throw new Error(errors.ruleMissing(index + 1));
     try { new RegExp(pattern, flags); }
-    catch { throw new Error(`第 ${index + 1} 条规则的正则无效`); }
+    catch { throw new Error(errors.ruleRegex(index + 1)); }
     return {
       id: typeof item.id === "string" && item.id ? item.id : crypto.randomUUID(),
       name,
@@ -83,6 +85,8 @@ export default function SoundsPage() {
   const filterMenuRef = useRef<HTMLDetailsElement | null>(null);
   const searchInputRef = useRef<HTMLInputElement | null>(null);
   const shortcutLabel = useSearchShortcut(searchInputRef);
+  const { t, tag: tagText } = useLocale();
+  const timeoutMessage = t.sounds.errors.timeout;
 
   const stopLoading = useCallback(() => {
     if (loadingTimeoutRef.current) clearTimeout(loadingTimeoutRef.current);
@@ -97,9 +101,9 @@ export default function SoundsPage() {
       audioRef.current?.pause();
       loadingTimeoutRef.current = null;
       setLoadingId(null);
-      setError("音效载入超时，请重试");
+      setError(timeoutMessage);
     }, 15_000);
-  }, []);
+  }, [timeoutMessage]);
 
   useEffect(() => {
     fetch("/data/sound.v1.json").then((res) => res.json()).then(setSounds);
@@ -110,15 +114,15 @@ export default function SoundsPage() {
       } else {
         fetch("/data/default-category-rules.v1.json")
           .then((response) => {
-            if (!response.ok) throw new Error("默认规则文件不存在");
+            if (!response.ok) throw new Error(t.library.errors.defaultMissing);
             return response.json();
           })
           .then((payload) => {
-            const initialRules = parseRulesPayload(payload);
+            const initialRules = parseRulesPayload(payload, t.library.errors);
             setRules(initialRules);
             localStorage.setItem(RULES_KEY, JSON.stringify(initialRules));
           })
-          .catch((cause) => setRuleError(cause instanceof Error ? `默认规则载入失败：${cause.message}` : "默认规则载入失败"));
+          .catch((cause) => setRuleError(t.library.errors.defaultFailed(cause instanceof Error ? cause.message : undefined)));
       }
     } catch { localStorage.removeItem(RULES_KEY); }
     try {
@@ -132,6 +136,7 @@ export default function SoundsPage() {
         });
       }
     } catch { localStorage.removeItem(DURATION_FILTER_KEY); }
+    // The error text for the default rules uses the language at mount time.
     const audio = new Audio();
     audio.preload = "none";
     const onCanPlay = () => stopLoading();
@@ -154,6 +159,7 @@ export default function SoundsPage() {
       audio.removeEventListener("ended", onEnded);
       audio.removeEventListener("error", onError);
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [stopLoading]);
 
   useEffect(() => {
@@ -186,7 +192,7 @@ export default function SoundsPage() {
   }, [classified, hideShortDuration, durationThreshold]);
 
   const categoryCounts = useMemo(() => durationFiltered.reduce<Record<string, number>>((counts, sound) => {
-    if (!sound.matchedCategories.length) counts["未分类"] = (counts["未分类"] ?? 0) + 1;
+    if (!sound.matchedCategories.length) counts[UNCATEGORIZED] = (counts[UNCATEGORIZED] ?? 0) + 1;
     for (const tag of sound.matchedCategories) counts[tag] = (counts[tag] ?? 0) + 1;
     return counts;
   }, {}), [durationFiltered]);
@@ -199,10 +205,10 @@ export default function SoundsPage() {
   const filtered = useMemo(() => {
     const term = normalizeSearch(query);
     return durationFiltered.filter((sound) => {
-      const matchesCategory = category === "all" || (category === "未分类" ? !sound.matchedCategories.length : sound.matchedCategories.includes(category));
-      return matchesCategory && (!term || normalizeSearch(`${sound.title} ${sound.originalName} ${sound.matchedCategories.join(" ")}`).includes(term));
+      const matchesCategory = category === "all" || (category === UNCATEGORIZED ? !sound.matchedCategories.length : sound.matchedCategories.includes(category));
+      return matchesCategory && (!term || normalizeSearch(`${sound.title} ${sound.originalName} ${sound.matchedCategories.join(" ")} ${sound.matchedCategories.map(tagText).join(" ")}`).includes(term));
     });
-  }, [durationFiltered, query, category]);
+  }, [durationFiltered, query, category, tagText]);
   // 桌面端每页条数 = 列表卡片里能完整放下的行数，不出现滚动
   const listRef = useRef<HTMLDivElement | null>(null);
   const pageSize = useFitPageSize(listRef, ".sound-card", FALLBACK_PAGE_SIZE, filtered.length > 0);
@@ -214,7 +220,7 @@ export default function SoundsPage() {
   function saveRules(nextRules: CategoryRule[]) {
     setRules(nextRules);
     localStorage.setItem(RULES_KEY, JSON.stringify(nextRules));
-    if (category !== "all" && category !== "未分类" && !nextRules.some((rule) => rule.name === category)) setCategory("all");
+    if (category !== "all" && category !== UNCATEGORIZED && !nextRules.some((rule) => rule.name === category)) setCategory("all");
     setPage(1);
   }
 
@@ -233,10 +239,10 @@ export default function SoundsPage() {
     event.preventDefault();
     const name = ruleName.trim();
     const input = rulePattern.trim();
-    if (!name || !input) { setRuleError("请填写分类名称和正则表达式"); return; }
+    if (!name || !input) { setRuleError(t.sounds.fillBoth); return; }
     const { pattern, flags } = parseRegexInput(input);
     try { new RegExp(pattern, flags); }
-    catch (cause) { setRuleError(cause instanceof Error ? `正则无效：${cause.message}` : "正则表达式无效"); return; }
+    catch (cause) { setRuleError(t.library.errors.regex(cause instanceof Error ? cause.message : undefined)); return; }
     if (editingRuleId) {
       saveRules(rules.map((rule) => rule.id === editingRuleId ? { ...rule, name, pattern, flags } : rule));
     } else {
@@ -295,7 +301,7 @@ export default function SoundsPage() {
     setRuleError(null);
     setImportMessage(null);
     try {
-      const imported = parseRulesPayload(JSON.parse(await file.text()));
+      const imported = parseRulesPayload(JSON.parse(await file.text()), t.library.errors);
       const merged = [...rules];
       let updated = 0;
       let added = 0;
@@ -306,9 +312,9 @@ export default function SoundsPage() {
       }
       saveRules(merged);
       setRuleListOpen(false);
-      setImportMessage(`导入完成：新增 ${added} 条，更新 ${updated} 条`);
+      setImportMessage(t.library.imported(added, updated));
     } catch (cause) {
-      setRuleError(cause instanceof Error ? `导入失败：${cause.message}` : "导入失败：无法读取文件");
+      setRuleError(t.library.errors.importFailed(cause instanceof Error ? cause.message : undefined));
     }
   }
 
@@ -333,7 +339,7 @@ export default function SoundsPage() {
       }
     } catch (cause) {
       stopLoading();
-      setError(cause instanceof Error ? cause.message : "无法播放音效");
+      setError(cause instanceof Error ? cause.message : t.sounds.errors.play);
     }
   }
 
@@ -343,46 +349,46 @@ export default function SoundsPage() {
       setCopiedId(sound.id);
       window.setTimeout(() => setCopiedId((current) => current === sound.id ? null : current), 1400);
     } catch {
-      setError("复制文件名失败，请检查浏览器剪贴板权限");
+      setError(t.sounds.errors.copy);
     }
   }
 
   return (
     <div className="page library-page sounds-page">
-      <h1 className="visually-hidden">万籁库</h1>
+      <h1 className="visually-hidden">{t.nav.sounds}</h1>
 
-      <section className="filter-card" aria-label="搜索与筛选">
-        <div className="toolbar"><label className="search-box"><Search size={18} /><input ref={searchInputRef} value={query} onChange={(event) => { setQuery(event.target.value); setPage(1); }} placeholder="搜索文件名或分类…" /><kbd>{shortcutLabel}</kbd></label><details ref={filterMenuRef} className="filter-menu"><summary><SlidersHorizontal size={16} /><span>筛选设置</span>{hideShortDuration && <em>≧ {Number(durationThreshold) || 1} 秒</em>}</summary><div className="filter-popover"><strong>音效时长</strong><div className="duration-filter-row"><label className="duration-filter-toggle"><input type="checkbox" checked={hideShortDuration} onChange={(event) => saveDurationFilter(event.target.checked, durationThreshold)} /><span>音效时长 ≧</span></label><label className="duration-input"><input type="number" min="1" step="1" inputMode="numeric" value={durationThreshold} onChange={(event) => { if (event.target.value === "" || /^\d+$/.test(event.target.value)) saveDurationFilter(hideShortDuration, event.target.value); }} onBlur={() => { if (durationThreshold === "") saveDurationFilter(hideShortDuration, "1"); }} /><span>秒</span></label></div></div></details><button className={`toolbar-button${rulePanelOpen ? " active" : ""}`} type="button" onClick={() => setRulePanelOpen((value) => !value)} aria-expanded={rulePanelOpen} aria-controls="sound-rule-panel"><Braces size={16} />分类规则</button><span className="record-count">{filtered.length.toLocaleString()} / {sounds.length.toLocaleString()} 条</span></div>
-        {rulePanelOpen && <section className="regex-panel" id="sound-rule-panel" aria-label="正则分类规则">
+      <section className="filter-card" aria-label={t.library.filters}>
+        <div className="toolbar"><label className="search-box"><Search size={18} /><input ref={searchInputRef} value={query} onChange={(event) => { setQuery(event.target.value); setPage(1); }} placeholder={t.sounds.search} /><kbd>{shortcutLabel}</kbd></label><details ref={filterMenuRef} className="filter-menu"><summary><SlidersHorizontal size={16} /><span>{t.sounds.filterSettings}</span>{hideShortDuration && <em>{t.sounds.minDuration(Number(durationThreshold) || 1)}</em>}</summary><div className="filter-popover"><strong>{t.sounds.duration}</strong><div className="duration-filter-row"><label className="duration-filter-toggle"><input type="checkbox" checked={hideShortDuration} onChange={(event) => saveDurationFilter(event.target.checked, durationThreshold)} /><span>{t.sounds.durationAtLeast}</span></label><label className="duration-input"><input type="number" min="1" step="1" inputMode="numeric" value={durationThreshold} onChange={(event) => { if (event.target.value === "" || /^\d+$/.test(event.target.value)) saveDurationFilter(hideShortDuration, event.target.value); }} onBlur={() => { if (durationThreshold === "") saveDurationFilter(hideShortDuration, "1"); }} /><span>{t.sounds.seconds}</span></label></div></div></details><button className={`toolbar-button${rulePanelOpen ? " active" : ""}`} type="button" onClick={() => setRulePanelOpen((value) => !value)} aria-expanded={rulePanelOpen} aria-controls="sound-rule-panel"><Braces size={16} />{t.library.rules}</button><span className="record-count">{t.sounds.count(filtered.length.toLocaleString(), sounds.length.toLocaleString())}</span></div>
+        {rulePanelOpen && <section className="regex-panel" id="sound-rule-panel" aria-label={t.library.rulePanel}>
           <div className="regex-panel-body">
             <form className="rule-form" onSubmit={addRule}>
-              <label><span>分类名称</span><input value={ruleName} onChange={(event) => setRuleName(event.target.value)} placeholder="例如：角色语音" /></label>
-              <label className="pattern-field"><span>文件名正则</span><div><input value={rulePattern} onChange={(event) => setRulePattern(event.target.value)} placeholder="^boss 或 /.*qimen.*$/i" /></div></label>
-              <div className="rule-form-actions"><button className="add-rule-button" type="submit">{editingRuleId ? <Save size={16} /> : <Plus size={16} />}{editingRuleId ? "保存修改" : "添加规则"}</button>{editingRuleId && <button className="cancel-edit-button" type="button" onClick={cancelEdit}><X size={15} />取消</button>}</div>
+              <label><span>{t.sounds.nameLabel}</span><input value={ruleName} onChange={(event) => setRuleName(event.target.value)} placeholder={t.sounds.namePlaceholder} /></label>
+              <label className="pattern-field"><span>{t.library.patternLabel}</span><div><input value={rulePattern} onChange={(event) => setRulePattern(event.target.value)} placeholder={t.sounds.patternPlaceholder} /></div></label>
+              <div className="rule-form-actions"><button className="add-rule-button" type="submit">{editingRuleId ? <Save size={16} /> : <Plus size={16} />}{editingRuleId ? t.library.save : t.library.add}</button>{editingRuleId && <button className="cancel-edit-button" type="button" onClick={cancelEdit}><X size={15} />{t.library.cancel}</button>}</div>
             </form>
             {ruleError && <p className="rule-error"><CircleAlert size={14} />{ruleError}</p>}
             {importMessage && <p className="import-success"><Check size={14} />{importMessage}</p>}
-            <div className="rule-hint">可输入正则内容，例如 <code>^boss</code>（默认添加 i），也可输入完整形式 <code>/.*qimen.*$/i</code>，完整形式不会被重复包裹。</div>
-            <div className="rule-list-heading"><button className="rule-list-toggle" type="button" onClick={() => setRuleListOpen((value) => !value)} aria-expanded={ruleListOpen}>{ruleListOpen ? <ChevronDown size={14} /> : <ChevronRight size={14} />}当前规则 <span>{rules.length}</span></button><div className="rule-file-actions"><button type="button" onClick={() => importInputRef.current?.click()}><Upload size={14} />导入 JSON</button><button type="button" onClick={exportRules} disabled={!rules.length}><Download size={14} />导出 JSON</button><input ref={importInputRef} className="visually-hidden" type="file" accept="application/json,.json" onChange={(event) => void importRules(event)} /></div></div>
-            {ruleListOpen && rules.length > 0 && <div className="rule-list">{rules.map((rule, index) => <div className={`rule-item ${editingRuleId === rule.id ? "editing" : ""}`} key={rule.id}><span className="rule-order">{index + 1}</span><strong>{rule.name}</strong><code>{displayRegex(rule)}</code><span>{categoryCounts[rule.name] ?? 0} 条</span><button onClick={() => editRule(rule)} aria-label={`编辑 ${rule.name} 规则`} title="编辑规则"><Pencil size={14} /></button><button onClick={() => deleteRule(rule.id)} aria-label={`删除 ${rule.name} 规则`} title="删除规则"><Trash2 size={15} /></button></div>)}</div>}
+            <div className="rule-hint">{t.sounds.hint}</div>
+            <div className="rule-list-heading"><button className="rule-list-toggle" type="button" onClick={() => setRuleListOpen((value) => !value)} aria-expanded={ruleListOpen}>{ruleListOpen ? <ChevronDown size={14} /> : <ChevronRight size={14} />}{t.library.currentRules} <span>{rules.length}</span></button><div className="rule-file-actions"><button type="button" onClick={() => importInputRef.current?.click()}><Upload size={14} />{t.library.importJson}</button><button type="button" onClick={exportRules} disabled={!rules.length}><Download size={14} />{t.library.exportJson}</button><input ref={importInputRef} className="visually-hidden" type="file" accept="application/json,.json" onChange={(event) => void importRules(event)} /></div></div>
+            {ruleListOpen && rules.length > 0 && <div className="rule-list">{rules.map((rule, index) => <div className={`rule-item ${editingRuleId === rule.id ? "editing" : ""}`} key={rule.id}><span className="rule-order">{index + 1}</span><strong>{tagText(rule.name)}</strong><code>{displayRegex(rule)}</code><span>{t.sounds.ruleCount(categoryCounts[rule.name] ?? 0)}</span><button onClick={() => editRule(rule)} aria-label={t.library.editRule(tagText(rule.name))} title={t.library.editTitle}><Pencil size={14} /></button><button onClick={() => deleteRule(rule.id)} aria-label={t.library.deleteRule(tagText(rule.name))} title={t.library.deleteTitle}><Trash2 size={15} /></button></div>)}</div>}
           </div>
         </section>}
 
         <CategoryChips tags={sortedTagNames} counts={categoryCounts} total={durationFiltered.length} category={category} onSelect={(value) => { setCategory(value); setPage(1); }} />
       </section>
-      {error && <div className="inline-error" role="alert"><CircleAlert size={17} />音效加载失败，请稍后重试。</div>}
-      <section className="list-card" aria-label="音效列表">
+      {error && <div className="inline-error" role="alert"><CircleAlert size={17} />{t.sounds.loadFailed}</div>}
+      <section className="list-card" aria-label={t.sounds.list}>
         <div ref={listRef} className="list-scroll sound-grid">
         {visible.map((sound) => {
           const active = activeId === sound.id;
           const visibleTags = sound.matchedCategories.slice(0, 1);
           const copied = copiedId === sound.id;
           const loading = loadingId === sound.id;
-          return <div className={`sound-card ${active ? "active" : ""}`} key={sound.id}><button className="sound-play" onClick={() => void preview(sound)} aria-label={loading ? `正在载入 ${sound.originalName}` : `试听 ${sound.originalName}`} aria-busy={loading}>{loading ? <span className="audio-spinner" /> : active && playing ? <Pause size={17} /> : active ? <RotateCcw size={17} /> : <Play size={17} fill="currentColor" />}</button><button className="sound-info" onClick={() => void preview(sound)} title="点击试听"><strong>{sound.originalName}</strong></button><span className="category-tags">{visibleTags.map((tag) => <button className="category-tag matched" key={tag} onClick={() => { setCategory(tag); setPage(1); }} title={`筛选标签：${tag}`}>{tag}</button>)}{sound.matchedCategories.length > 1 && <span className="more-tags" title={sound.matchedCategories.slice(1).join("、")}>+{sound.matchedCategories.length - 1}</span>}</span><span className="sound-duration">{formatTime(sound.durationMs)}</span><button className={`copy-filename ${copied ? "copied" : ""}`} onClick={() => void copyFilename(sound)} aria-label={`复制文件名 ${sound.originalName}`} title={copied ? "已复制" : "复制文件名"}>{copied ? <Check size={15} /> : <Copy size={15} />}</button></div>;
+          return <div className={`sound-card ${active ? "active" : ""}`} key={sound.id}><button className="sound-play" onClick={() => void preview(sound)} aria-label={loading ? t.sounds.loadingName(sound.originalName) : t.sounds.play(sound.originalName)} aria-busy={loading}>{loading ? <span className="audio-spinner" /> : active && playing ? <Pause size={17} /> : active ? <RotateCcw size={17} /> : <Play size={17} fill="currentColor" />}</button><button className="sound-info" onClick={() => void preview(sound)} title={t.sounds.playTitle}><strong>{sound.originalName}</strong></button><span className="category-tags">{visibleTags.map((tag) => <button className="category-tag matched" key={tag} onClick={() => { setCategory(tag); setPage(1); }} title={t.sounds.filterTag(tagText(tag))}>{tagText(tag)}</button>)}{sound.matchedCategories.length > 1 && <span className="more-tags" title={sound.matchedCategories.slice(1).map(tagText).join(t.sounds.tagSeparator)}>+{sound.matchedCategories.length - 1}</span>}</span><span className="sound-duration">{formatTime(sound.durationMs)}</span><button className={`copy-filename ${copied ? "copied" : ""}`} onClick={() => void copyFilename(sound)} aria-label={t.sounds.copy(sound.originalName)} title={copied ? t.sounds.copied : t.sounds.copyTitle}>{copied ? <Check size={15} /> : <Copy size={15} />}</button></div>;
         })}
         {sounds.length > 0 && !filtered.length && <EmptyResults onReset={() => { setQuery(""); setCategory("all"); setPage(1); }} />}
         </div>
-        <Pagination page={currentPage} pages={pages} onChange={setPage} note={<> · 每页 {pageSize} 条</>} />
+        <Pagination page={currentPage} pages={pages} onChange={setPage} note={t.pagination.perPage(pageSize)} />
       </section>
     </div>
   );

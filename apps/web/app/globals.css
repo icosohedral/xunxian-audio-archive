@@ -169,6 +169,25 @@ summary:focus-visible {
   font-weight: 650;
   white-space: nowrap;
 }
+/* 语言切换：与来访胶囊同高同边框，可点击 */
+.lang-toggle {
+  height: 30px;
+  padding: 0 10px;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  border: 1px solid var(--line);
+  border-radius: 99px;
+  color: var(--ink-soft);
+  background: var(--field);
+  font-size: 12px;
+  font-weight: 650;
+  white-space: nowrap;
+  cursor: pointer;
+  transition: color .14s ease, border-color .14s ease, background-color .14s ease;
+}
+.lang-toggle:hover { color: var(--pine); border-color: var(--line-strong); background: var(--hover); }
+.lang-toggle:focus-visible { outline: none; box-shadow: 0 0 0 3px var(--focus-ring); }
 .status-pill .dot {
   width: 6px;
   height: 6px;

@@ -2,9 +2,10 @@
 
 import { useEffect, useRef } from "react";
 import { ChevronDown } from "lucide-react";
+import { UNCATEGORIZED } from "./i18n";
+import { useLocale } from "./locale-provider";
 
 const VISIBLE_TAGS = 5;
-export const UNCATEGORIZED = "未分类";
 
 type CategoryChipsProps = {
   /** Tag names, most-used first. */
@@ -15,9 +16,10 @@ type CategoryChipsProps = {
   onSelect: (category: string) => void;
 };
 
-/** Shows "全部" plus the top tags as chips; everything else lives in a "更多" menu. Only the active chip shows its count. */
+/** Shows "All" plus the top tags as chips; everything else lives in a "More" menu. Only the active chip shows its count. */
 export function CategoryChips({ tags, counts, total, category, onSelect }: CategoryChipsProps) {
   const menuRef = useRef<HTMLDetailsElement | null>(null);
+  const { t, tag: label } = useLocale();
   const visible = tags.slice(0, VISIBLE_TAGS);
   const hidden = [UNCATEGORIZED, ...tags.slice(VISIBLE_TAGS)];
   const activeHidden = hidden.includes(category) ? category : null;
@@ -43,17 +45,17 @@ export function CategoryChips({ tags, counts, total, category, onSelect }: Categ
 
   return (
     <div className="filter-chips">
-      {chip("all", "全部", total)}
-      {visible.map((tag) => chip(tag, tag, counts[tag] ?? 0))}
+      {chip("all", t.chips.all, total)}
+      {visible.map((tag) => chip(tag, label(tag), counts[tag] ?? 0))}
       <details ref={menuRef} className="chip-menu">
         <summary className={activeHidden ? "active" : ""}>
-          {activeHidden ? <>{activeHidden}<span>{(counts[activeHidden] ?? 0).toLocaleString()}</span></> : "更多"}
+          {activeHidden ? <>{label(activeHidden)}<span>{(counts[activeHidden] ?? 0).toLocaleString()}</span></> : t.chips.more}
           <ChevronDown size={13} aria-hidden="true" />
         </summary>
         <div className="chip-menu-list">
           {hidden.map((tag) => (
             <button key={tag} type="button" className={category === tag ? "active" : ""} aria-pressed={category === tag} onClick={() => choose(tag)}>
-              <span>{tag}</span><small>{(counts[tag] ?? 0).toLocaleString()}</small>
+              <span>{label(tag)}</span><small>{(counts[tag] ?? 0).toLocaleString()}</small>
             </button>
           ))}
         </div>

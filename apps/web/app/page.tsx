@@ -1,23 +1,26 @@
+"use client";
+
 import Image from "next/image";
 import { AudioLines, Disc3, Music2 } from "lucide-react";
 import { catalog, formatCount, formatHours, formatMiB } from "./catalog";
+import { useLocale } from "./locale-provider";
 
 const { counts, durationMs, bytes } = catalog;
 
-const stats = [
-  { icon: Disc3, label: "全部音频", value: formatCount(counts.total), hint: `共 ${formatHours(durationMs.total)} 小时 · ${formatMiB(bytes.total)} MiB` },
-  { icon: Music2, label: "背景音乐", value: formatCount(counts.music), hint: `${formatHours(durationMs.music)} 小时` },
-  { icon: AudioLines, label: "游戏音效", value: formatCount(counts.sound), hint: `${formatHours(durationMs.sound)} 小时` },
-];
-
 export default function Home() {
+  const { t } = useLocale();
+  const stats = [
+    { icon: Disc3, label: t.home.all, value: formatCount(counts.total), hint: t.home.totalHint(formatHours(durationMs.total), formatMiB(bytes.total)) },
+    { icon: Music2, label: t.home.music, value: formatCount(counts.music), hint: t.home.hours(formatHours(durationMs.music)) },
+    { icon: AudioLines, label: t.home.sounds, value: formatCount(counts.sound), hint: t.home.hours(formatHours(durationMs.sound)) },
+  ];
   return (
     <div className="page home-page">
-      <h1 className="visually-hidden">总览</h1>
+      <h1 className="visually-hidden">{t.nav.overview}</h1>
       <section className="library-intro">
         <div>
-          <h2>在中国神话与人间烟火之间寻仙</h2>
-          <p>寻仙以中国美术片风格构筑了一个有神仙妖怪、法宝灵兽，也有城镇村落与市井人情的东方世界。音乐与音效记录了其中的昼夜、地域、职业与剧情变化，本资料库希望让这些散落的声音重新变得可检索、可聆听。</p>
+          <h2>{t.home.intro}</h2>
+          <p>{t.home.body}</p>
         </div>
         <Image className="library-intro-art" src="/images/intro-sea.webp" alt="" width={676} height={520} priority unoptimized />
         {/* 深色主题换夜晚版（27KB）；直接加载，避免切到深色时空白一下 */}

@@ -2,6 +2,7 @@
 
 import { useRef } from "react";
 import { Compass } from "lucide-react";
+import { useLocale } from "./locale-provider";
 
 /** GitHub mark (filled), the same icon the resources archive's about dialog uses. */
 function GithubMark() {
@@ -12,38 +13,39 @@ function GithubMark() {
   );
 }
 
-export const ARCHIVE_VERSION = "v1.1.5";
+export const ARCHIVE_VERSION = "v1.1.6";
 
 /** The rail's version number; clicking it opens the about dialog (same layout as the GM workbench's). */
 export function AboutDialog() {
   const dialogRef = useRef<HTMLDialogElement | null>(null);
+  const { t } = useLocale();
   const close = () => dialogRef.current?.close();
 
   return (
     <>
-      <button type="button" className="rail-version" onClick={() => dialogRef.current?.showModal()} aria-haspopup="dialog" aria-label={`关于寻仙音乐资料库，版本 ${ARCHIVE_VERSION}`}>{ARCHIVE_VERSION}</button>
+      <button type="button" className="rail-version" onClick={() => dialogRef.current?.showModal()} aria-haspopup="dialog" aria-label={t.about.open(ARCHIVE_VERSION)}>{ARCHIVE_VERSION}</button>
       <dialog
         ref={dialogRef}
         className="about-dialog"
         aria-labelledby="about-dialog-title"
         onClick={(event) => { if (event.target === event.currentTarget) close(); }}
       >
-        <h3 id="about-dialog-title" className="about-dialog-head">寻仙音乐资料库 {ARCHIVE_VERSION}</h3>
+        <h3 id="about-dialog-title" className="about-dialog-head">{t.siteName} {ARCHIVE_VERSION}</h3>
         <div className="about-dialog-body">
           <div className="about-row">
             <GithubMark />
-            <span className="about-label">项目地址</span>
+            <span className="about-label">{t.about.repo}</span>
             <a href="https://github.com/icosohedral/xunxian-audio-archive" target="_blank" rel="noopener noreferrer" title="github.com/icosohedral/xunxian-audio-archive">xunxian-audio-archive</a>
           </div>
           <div className="about-row">
             <Compass size={16} strokeWidth={1.8} aria-hidden="true" />
-            <span className="about-label">资源总站</span>
+            <span className="about-label">{t.about.hub}</span>
             <a href="https://xunxian.wiki">xunxian.wiki</a>
           </div>
-          <p className="about-notice">本站为资料整理与试听项目，游戏及相关权利归原权利人所有。</p>
+          <p className="about-notice">{t.about.notice}</p>
         </div>
         <div className="about-dialog-foot">
-          <button type="button" className="about-dialog-ok" onClick={close} autoFocus>知道了</button>
+          <button type="button" className="about-dialog-ok" onClick={close} autoFocus>{t.about.ok}</button>
         </div>
       </dialog>
     </>

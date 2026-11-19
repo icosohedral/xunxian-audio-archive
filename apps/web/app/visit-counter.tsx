@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useLocale } from "./locale-provider";
 
 const STORAGE_PREFIX = "xunxian:daily-visitor:";
 const RECORDED_PREFIX = "xunxian:daily-visitor-recorded:";
@@ -73,6 +74,8 @@ export function VisitTracker() {
 
 export function DailyVisitStatus() {
   const [count, setCount] = useState<number | null>(null);
+  const { locale, t } = useLocale();
+  const formatted = count?.toLocaleString(locale === "en" ? "en-US" : "zh-CN");
 
   useEffect(() => {
     const receiveCount = (event: Event) => {
@@ -91,8 +94,8 @@ export function DailyVisitStatus() {
   }, []);
 
   return (
-    <span className="topbar-visitors" aria-label={count === null ? "正在载入今日访客数" : `今日来访 ${count.toLocaleString("zh-CN")} 人次`} aria-live="polite">
-      今日来访 {count === null ? <span className="visit-placeholder" aria-hidden="true">—</span> : <strong>{count.toLocaleString("zh-CN")}</strong>}
+    <span className="topbar-visitors" aria-label={formatted === undefined ? t.visits.loading : t.visits.count(formatted)} aria-live="polite">
+      {t.visits.label} {formatted === undefined ? <span className="visit-placeholder" aria-hidden="true">—</span> : <strong>{formatted}</strong>}
     </span>
   );
 }

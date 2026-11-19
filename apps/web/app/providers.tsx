@@ -5,6 +5,8 @@ import type { Track } from "./types";
 import { resolveAudioUrl, selectPlayableAudioKey } from "./types";
 
 type PlayMode = "sequence" | "shuffle" | "repeat";
+/** Shown in the player in the visitor's language. */
+export type PlayerError = "timeout" | "play";
 
 type PlayerState = {
   current: Track | null;
@@ -14,7 +16,7 @@ type PlayerState = {
   duration: number;
   volume: number;
   mode: PlayMode;
-  error: string | null;
+  error: PlayerError | null;
   play: (track: Track, queue?: Track[]) => Promise<void>;
   toggle: () => void;
   previous: () => void;
@@ -37,7 +39,7 @@ export function PlayerProvider({ children }: { children: React.ReactNode }) {
   const [duration, setDuration] = useState(0);
   const [volume, updateVolume] = useState(0.75);
   const [mode, setMode] = useState<PlayMode>("sequence");
-  const [error, setError] = useState<string | null>(null);
+  const [error, setError] = useState<PlayerError | null>(null);
 
   const stopLoading = useCallback(() => {
     if (loadingTimeoutRef.current) clearTimeout(loadingTimeoutRef.current);
@@ -52,7 +54,7 @@ export function PlayerProvider({ children }: { children: React.ReactNode }) {
       audioRef.current?.pause();
       loadingTimeoutRef.current = null;
       setLoading(false);
-      setError("音频载入超时，请重试");
+      setError("timeout");
     }, 15_000);
   }, []);
 
@@ -106,9 +108,9 @@ export function PlayerProvider({ children }: { children: React.ReactNode }) {
       }
       await audio.play();
       stopLoading();
-    } catch (cause) {
+    } catch {
       stopLoading();
-      setError(cause instanceof Error ? cause.message : "无法播放音频");
+      setError("play");
     }
   }, [current, startLoading, stopLoading]);
 
@@ -154,9 +156,9 @@ export function PlayerProvider({ children }: { children: React.ReactNode }) {
         startLoading();
         void audio.play()
           .then(stopLoading)
-          .catch((cause) => {
+          .catch(() => {
             stopLoading();
-            setError(cause instanceof Error ? cause.message : "无法播放音频");
+            setError("play");
           });
       } else {
         audio.pause();

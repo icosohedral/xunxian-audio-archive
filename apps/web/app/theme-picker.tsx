@@ -1,15 +1,12 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useLocale } from "./locale-provider";
 import { THEME_STORAGE_KEY } from "./theme";
 
-const themes = [
-  { value: "green", label: "青绿主题" },
-  { value: "orange", label: "陶土橙主题" },
-  { value: "dark", label: "深色主题" },
-] as const;
+const themes = ["green", "orange", "dark"] as const;
 
-type ThemeValue = (typeof themes)[number]["value"];
+type ThemeValue = (typeof themes)[number];
 
 function applyTheme(value: ThemeValue) {
   const root = document.documentElement;
@@ -21,6 +18,7 @@ function applyTheme(value: ThemeValue) {
 
 export function ThemePicker() {
   const [theme, setTheme] = useState<ThemeValue>("green");
+  const { t } = useLocale();
 
   useEffect(() => {
     const root = document.documentElement;
@@ -35,9 +33,9 @@ export function ThemePicker() {
   }
 
   return (
-    <div className="theme-picker" role="group" aria-label="配色主题">
-      {themes.map(({ value, label }) => (
-        <button key={value} type="button" className="theme-swatch" data-theme-value={value} aria-label={label} title={label} aria-pressed={theme === value} onClick={() => choose(value)} />
+    <div className="theme-picker" role="group" aria-label={t.theme.label}>
+      {themes.map((value) => (
+        <button key={value} type="button" className="theme-swatch" data-theme-value={value} aria-label={t.theme[value]} title={t.theme[value]} aria-pressed={theme === value} onClick={() => choose(value)} />
       ))}
     </div>
   );

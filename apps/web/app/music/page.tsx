@@ -8,6 +8,8 @@ import { useFitPageSize } from "../fit-page-size";
 import { Pagination } from "../pagination";
 import { usePlayer } from "../providers";
 import { useSearchShortcut } from "../search-shortcut";
+import { UNCATEGORIZED, type Messages } from "../i18n";
+import { useLocale } from "../locale-provider";
 import { formatTime, normalizeSearch, type Track } from "../types";
 
 /** Page size on narrow screens, where the list scrolls with the page. */
@@ -33,18 +35,18 @@ function displayRegex(rule: MusicRule) {
   return `/${rule.pattern}/${rule.flags ?? "i"}`;
 }
 
-function parseRulesPayload(value: unknown) {
-  if (!value || typeof value !== "object") throw new Error("文件内容不是有效对象");
+function parseRulesPayload(value: unknown, errors: Messages["library"]["errors"]) {
+  if (!value || typeof value !== "object") throw new Error(errors.notObject);
   const payload = value as { format?: unknown; version?: unknown; rules?: unknown };
-  if (payload.format !== "xunxian-music-category-rules" || payload.version !== 1 || !Array.isArray(payload.rules)) throw new Error("文件格式或版本不受支持");
+  if (payload.format !== "xunxian-music-category-rules" || payload.version !== 1 || !Array.isArray(payload.rules)) throw new Error(errors.unsupported);
   return payload.rules.map((value, index) => {
-    if (!value || typeof value !== "object") throw new Error(`第 ${index + 1} 条规则格式无效`);
+    if (!value || typeof value !== "object") throw new Error(errors.ruleInvalid(index + 1));
     const item = value as Record<string, unknown>;
     const name = typeof item.name === "string" ? item.name.trim() : "";
     const pattern = typeof item.pattern === "string" ? item.pattern : "";
     const flags = typeof item.flags === "string" ? item.flags : "i";
-    if (!name || !pattern) throw new Error(`第 ${index + 1} 条规则缺少名称或正则`);
-    try { new RegExp(pattern, flags); } catch { throw new Error(`第 ${index + 1} 条规则的正则无效`); }
+    if (!name || !pattern) throw new Error(errors.ruleMissing(index + 1));
+    try { new RegExp(pattern, flags); } catch { throw new Error(errors.ruleRegex(index + 1)); }
     return { id: typeof item.id === "string" && item.id ? item.id : crypto.randomUUID(), name, pattern, flags } satisfies MusicRule;
   });
 }
@@ -66,6 +68,7 @@ export default function MusicPage() {
   const searchInputRef = useRef<HTMLInputElement | null>(null);
   const shortcutLabel = useSearchShortcut(searchInputRef);
   const player = usePlayer();
+  const { t, tag: tagText } = useLocale();
 
   useEffect(() => {
     fetch("/data/music.v1.json").then((res) => res.json()).then(setTracks);
@@ -76,17 +79,19 @@ export default function MusicPage() {
       } else {
         fetch("/data/default-music-category-rules.v1.json")
           .then((response) => {
-            if (!response.ok) throw new Error("默认音乐规则文件不存在");
+            if (!response.ok) throw new Error(t.library.errors.defaultMissing);
             return response.json();
           })
           .then((payload) => {
-            const initialRules = parseRulesPayload(payload);
+            const initialRules = parseRulesPayload(payload, t.library.errors);
             setRules(initialRules);
             localStorage.setItem(RULES_KEY, JSON.stringify(initialRules));
           })
-          .catch((cause) => setRuleError(cause instanceof Error ? `默认规则载入失败：${cause.message}` : "默认规则载入失败"));
+          .catch((cause) => setRuleError(t.library.errors.defaultFailed(cause instanceof Error ? cause.message : undefined)));
       }
     } catch { localStorage.removeItem(RULES_KEY); }
+    // Runs once on mount; the error text uses the language at that moment.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const compiledRules = useMemo(() => rules.map((rule) => {
@@ -100,7 +105,7 @@ export default function MusicPage() {
   })), [tracks, compiledRules]);
 
   const categoryCounts = useMemo(() => classified.reduce<Record<string, number>>((counts, track) => {
-    if (!track.matchedCategories.length) counts["未分类"] = (counts["未分类"] ?? 0) + 1;
+    if (!track.matchedCategories.length) counts[UNCATEGORIZED] = (counts[UNCATEGORIZED] ?? 0) + 1;
     for (const tag of track.matchedCategories) counts[tag] = (counts[tag] ?? 0) + 1;
     return counts;
   }, {}), [classified]);
@@ -108,10 +113,10 @@ export default function MusicPage() {
   const filtered = useMemo(() => {
     const term = normalizeSearch(query);
     return classified.filter((track) => {
-      const matchesCategory = category === "all" || (category === "未分类" ? !track.matchedCategories.length : track.matchedCategories.includes(category));
-      return matchesCategory && (!term || normalizeSearch(`${track.title} ${track.originalName} ${track.matchedCategories.join(" ")}`).includes(term));
+      const matchesCategory = category === "all" || (category === UNCATEGORIZED ? !track.matchedCategories.length : track.matchedCategories.includes(category));
+      return matchesCategory && (!term || normalizeSearch(`${track.title} ${track.originalName} ${track.matchedCategories.join(" ")} ${track.matchedCategories.map(tagText).join(" ")}`).includes(term));
     });
-  }, [classified, query, category]);
+  }, [classified, query, category, tagText]);
   // 桌面端每页条数 = 列表卡片里能完整放下的行数，不出现滚动
   const listRef = useRef<HTMLDivElement | null>(null);
   const pageSize = useFitPageSize(listRef, ".track-row:not(.track-head)", FALLBACK_PAGE_SIZE, filtered.length > 0);
@@ -123,7 +128,7 @@ export default function MusicPage() {
   function saveRules(nextRules: MusicRule[]) {
     setRules(nextRules);
     localStorage.setItem(RULES_KEY, JSON.stringify(nextRules));
-    if (category !== "all" && category !== "未分类" && !nextRules.some((rule) => rule.name === category)) setCategory("all");
+    if (category !== "all" && category !== UNCATEGORIZED && !nextRules.some((rule) => rule.name === category)) setCategory("all");
     setPage(1);
   }
 
@@ -131,9 +136,9 @@ export default function MusicPage() {
     event.preventDefault();
     const name = ruleName.trim();
     const input = rulePattern.trim();
-    if (!name || !input) { setRuleError("请填写标签名称和正则表达式"); return; }
+    if (!name || !input) { setRuleError(t.music.fillBoth); return; }
     const { pattern, flags } = parseRegexInput(input);
-    try { new RegExp(pattern, flags); } catch (cause) { setRuleError(cause instanceof Error ? `正则无效：${cause.message}` : "正则表达式无效"); return; }
+    try { new RegExp(pattern, flags); } catch (cause) { setRuleError(t.library.errors.regex(cause instanceof Error ? cause.message : undefined)); return; }
     saveRules(editingRuleId ? rules.map((rule) => rule.id === editingRuleId ? { ...rule, name, pattern, flags } : rule) : [...rules, { id: crypto.randomUUID(), name, pattern, flags }]);
     setRuleName(""); setRulePattern(""); setRuleError(null); setEditingRuleId(null);
   }
@@ -158,39 +163,39 @@ export default function MusicPage() {
     const file = event.target.files?.[0]; event.target.value = ""; if (!file) return;
     setRuleError(null); setImportMessage(null);
     try {
-      const imported = parseRulesPayload(JSON.parse(await file.text()));
+      const imported = parseRulesPayload(JSON.parse(await file.text()), t.library.errors);
       const merged = [...rules]; let added = 0; let updated = 0;
       for (const rule of imported) { const index = merged.findIndex((item) => item.id === rule.id); if (index >= 0) { merged[index] = rule; updated += 1; } else { merged.push(rule); added += 1; } }
-      saveRules(merged); setRuleListOpen(false); setImportMessage(`导入完成：新增 ${added} 条，更新 ${updated} 条`);
-    } catch (cause) { setRuleError(cause instanceof Error ? `导入失败：${cause.message}` : "导入失败：无法读取文件"); }
+      saveRules(merged); setRuleListOpen(false); setImportMessage(t.library.imported(added, updated));
+    } catch (cause) { setRuleError(t.library.errors.importFailed(cause instanceof Error ? cause.message : undefined)); }
   }
 
   const choose = (track: Track) => player.current?.id === track.id ? player.toggle() : void player.play(track, filtered);
 
   return (
     <div className="page library-page music-page">
-      <h1 className="visually-hidden">仙乐集</h1>
+      <h1 className="visually-hidden">{t.nav.music}</h1>
 
-      <section className="filter-card" aria-label="搜索与筛选">
-        <div className="toolbar"><label className="search-box"><Search size={18} /><input ref={searchInputRef} value={query} onChange={(event) => { setQuery(event.target.value); setPage(1); }} placeholder="搜索文件名或标签…" /><kbd>{shortcutLabel}</kbd></label><button className={`toolbar-button${rulePanelOpen ? " active" : ""}`} type="button" onClick={() => setRulePanelOpen((value) => !value)} aria-expanded={rulePanelOpen} aria-controls="music-rule-panel"><Braces size={16} />分类规则</button><span className="record-count">{filtered.length.toLocaleString()} / {tracks.length.toLocaleString()} 首</span></div>
-        {rulePanelOpen && <section className="regex-panel" id="music-rule-panel" aria-label="正则分类规则">
+      <section className="filter-card" aria-label={t.library.filters}>
+        <div className="toolbar"><label className="search-box"><Search size={18} /><input ref={searchInputRef} value={query} onChange={(event) => { setQuery(event.target.value); setPage(1); }} placeholder={t.music.search} /><kbd>{shortcutLabel}</kbd></label><button className={`toolbar-button${rulePanelOpen ? " active" : ""}`} type="button" onClick={() => setRulePanelOpen((value) => !value)} aria-expanded={rulePanelOpen} aria-controls="music-rule-panel"><Braces size={16} />{t.library.rules}</button><span className="record-count">{t.music.count(filtered.length.toLocaleString(), tracks.length.toLocaleString())}</span></div>
+        {rulePanelOpen && <section className="regex-panel" id="music-rule-panel" aria-label={t.library.rulePanel}>
           <div className="regex-panel-body">
-            <form className="rule-form" onSubmit={submitRule}><label><span>标签名称</span><input value={ruleName} onChange={(event) => setRuleName(event.target.value)} placeholder="例如：城镇音乐" /></label><label className="pattern-field"><span>文件名正则</span><div><input value={rulePattern} onChange={(event) => setRulePattern(event.target.value)} placeholder="^world_ 或 /.*night.*$/i" /></div></label><div className="rule-form-actions"><button className="add-rule-button" type="submit">{editingRuleId ? <Save size={16} /> : <Plus size={16} />}{editingRuleId ? "保存修改" : "添加规则"}</button>{editingRuleId && <button className="cancel-edit-button" type="button" onClick={cancelEdit}><X size={15} />取消</button>}</div></form>
+            <form className="rule-form" onSubmit={submitRule}><label><span>{t.music.nameLabel}</span><input value={ruleName} onChange={(event) => setRuleName(event.target.value)} placeholder={t.music.namePlaceholder} /></label><label className="pattern-field"><span>{t.library.patternLabel}</span><div><input value={rulePattern} onChange={(event) => setRulePattern(event.target.value)} placeholder={t.music.patternPlaceholder} /></div></label><div className="rule-form-actions"><button className="add-rule-button" type="submit">{editingRuleId ? <Save size={16} /> : <Plus size={16} />}{editingRuleId ? t.library.save : t.library.add}</button>{editingRuleId && <button className="cancel-edit-button" type="button" onClick={cancelEdit}><X size={15} />{t.library.cancel}</button>}</div></form>
             {ruleError && <p className="rule-error"><CircleAlert size={14} />{ruleError}</p>}{importMessage && <p className="import-success"><Check size={14} />{importMessage}</p>}
-            <div className="rule-hint">可输入正则内容，默认忽略大小写；完整的 <code>/.*night.*$/i</code> 形式也可直接使用。</div>
-            <div className="rule-list-heading"><button className="rule-list-toggle" type="button" onClick={() => setRuleListOpen((value) => !value)} aria-expanded={ruleListOpen}>{ruleListOpen ? <ChevronDown size={14} /> : <ChevronRight size={14} />}当前规则 <span>{rules.length}</span></button><div className="rule-file-actions"><button type="button" onClick={() => importInputRef.current?.click()}><Upload size={14} />导入 JSON</button><button type="button" onClick={exportRules} disabled={!rules.length}><Download size={14} />导出 JSON</button><input ref={importInputRef} className="visually-hidden" type="file" accept="application/json,.json" onChange={(event) => void importRules(event)} /></div></div>
-            {ruleListOpen && rules.length > 0 && <div className="rule-list">{rules.map((rule, index) => <div className={`rule-item ${editingRuleId === rule.id ? "editing" : ""}`} key={rule.id}><span className="rule-order">{index + 1}</span><strong>{rule.name}</strong><code>{displayRegex(rule)}</code><span>{categoryCounts[rule.name] ?? 0} 首</span><button onClick={() => editRule(rule)} aria-label={`编辑 ${rule.name} 规则`}><Pencil size={14} /></button><button onClick={() => { saveRules(rules.filter((item) => item.id !== rule.id)); if (editingRuleId === rule.id) cancelEdit(); }} aria-label={`删除 ${rule.name} 规则`}><Trash2 size={15} /></button></div>)}</div>}
+            <div className="rule-hint">{t.music.hint}</div>
+            <div className="rule-list-heading"><button className="rule-list-toggle" type="button" onClick={() => setRuleListOpen((value) => !value)} aria-expanded={ruleListOpen}>{ruleListOpen ? <ChevronDown size={14} /> : <ChevronRight size={14} />}{t.library.currentRules} <span>{rules.length}</span></button><div className="rule-file-actions"><button type="button" onClick={() => importInputRef.current?.click()}><Upload size={14} />{t.library.importJson}</button><button type="button" onClick={exportRules} disabled={!rules.length}><Download size={14} />{t.library.exportJson}</button><input ref={importInputRef} className="visually-hidden" type="file" accept="application/json,.json" onChange={(event) => void importRules(event)} /></div></div>
+            {ruleListOpen && rules.length > 0 && <div className="rule-list">{rules.map((rule, index) => <div className={`rule-item ${editingRuleId === rule.id ? "editing" : ""}`} key={rule.id}><span className="rule-order">{index + 1}</span><strong>{tagText(rule.name)}</strong><code>{displayRegex(rule)}</code><span>{t.music.ruleCount(categoryCounts[rule.name] ?? 0)}</span><button onClick={() => editRule(rule)} aria-label={t.library.editRule(tagText(rule.name))}><Pencil size={14} /></button><button onClick={() => { saveRules(rules.filter((item) => item.id !== rule.id)); if (editingRuleId === rule.id) cancelEdit(); }} aria-label={t.library.deleteRule(tagText(rule.name))}><Trash2 size={15} /></button></div>)}</div>}
           </div>
         </section>}
 
         <CategoryChips tags={tagNames} counts={categoryCounts} total={classified.length} category={category} onSelect={(value) => { setCategory(value); setPage(1); }} />
       </section>
-      <section className="list-card track-table" aria-label="背景音乐列表">
+      <section className="list-card track-table" aria-label={t.music.list}>
         <div ref={listRef} className="list-scroll">
-        <div className="track-row track-head"><span>#</span><span>曲目</span><span>标签</span><span>时长</span><span /></div>
+        <div className="track-row track-head"><span>#</span><span>{t.music.head.track}</span><span>{t.music.head.tags}</span><span>{t.music.head.length}</span><span /></div>
         {visible.map((track, index) => {
           const active = player.current?.id === track.id;
-          return <div className={`track-row ${active ? "playing" : ""}`} key={track.id}><button className="music-index" onClick={() => choose(track)}>{active && player.loading ? <span className="audio-spinner" /> : active ? <i className="playing-bars"><b /><b /><b /></i> : String((currentPage - 1) * pageSize + index + 1).padStart(2, "0")}</button><button className="track-name" onClick={() => choose(track)}><strong>{track.originalName}</strong></button><span className="music-tags">{track.matchedCategories.slice(0, 4).map((tag) => <button className="category-tag matched" key={tag} onClick={() => { setCategory(tag); setPage(1); }}>{tag}</button>)}{track.matchedCategories.length > 4 && <span className="more-tags">+{track.matchedCategories.length - 4}</span>}</span><span>{formatTime(track.durationMs)}</span><button className="row-play" onClick={() => choose(track)} aria-label={active && player.loading ? "正在载入" : active && player.playing ? "暂停" : "播放"} aria-busy={active && player.loading}>{active && player.loading ? <span className="audio-spinner" /> : active && player.playing ? <Pause size={15} /> : <Play size={15} fill="currentColor" />}</button></div>;
+          return <div className={`track-row ${active ? "playing" : ""}`} key={track.id}><button className="music-index" onClick={() => choose(track)}>{active && player.loading ? <span className="audio-spinner" /> : active ? <i className="playing-bars"><b /><b /><b /></i> : String((currentPage - 1) * pageSize + index + 1).padStart(2, "0")}</button><button className="track-name" onClick={() => choose(track)}><strong>{track.originalName}</strong></button><span className="music-tags">{track.matchedCategories.slice(0, 4).map((tag) => <button className="category-tag matched" key={tag} onClick={() => { setCategory(tag); setPage(1); }}>{tagText(tag)}</button>)}{track.matchedCategories.length > 4 && <span className="more-tags">+{track.matchedCategories.length - 4}</span>}</span><span>{formatTime(track.durationMs)}</span><button className="row-play" onClick={() => choose(track)} aria-label={active && player.loading ? t.player.loading : active && player.playing ? t.player.pause : t.player.play} aria-busy={active && player.loading}>{active && player.loading ? <span className="audio-spinner" /> : active && player.playing ? <Pause size={15} /> : <Play size={15} fill="currentColor" />}</button></div>;
         })}
         {tracks.length > 0 && !filtered.length && <EmptyResults onReset={() => { setQuery(""); setCategory("all"); setPage(1); }} />}
         </div>

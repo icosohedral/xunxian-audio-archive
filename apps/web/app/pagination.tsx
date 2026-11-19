@@ -1,9 +1,11 @@
 "use client";
 
 import type { KeyboardEvent, ReactNode } from "react";
+import { useLocale } from "./locale-provider";
 
 /** Previous / next buttons with an editable page number for jumping straight to a page. */
 export function Pagination({ page, pages, onChange, note }: { page: number; pages: number; onChange: (page: number) => void; note?: ReactNode }) {
+  const { t } = useLocale();
   if (pages <= 1) return null;
 
   const commit = (input: HTMLInputElement) => {
@@ -28,23 +30,21 @@ export function Pagination({ page, pages, onChange, note }: { page: number; page
   };
 
   return (
-    <nav className="pagination" aria-label="分页">
-      <button type="button" disabled={page === 1} onClick={() => onChange(page - 1)}>上一页</button>
+    <nav className="pagination" aria-label={t.pagination.label}>
+      <button type="button" disabled={page === 1} onClick={() => onChange(page - 1)}>{t.pagination.previous}</button>
       <span className="page-jump">
-        第
-        <input
+        {t.pagination.page(<input
           key={page}
           type="text"
           inputMode="numeric"
           defaultValue={page}
-          aria-label={`页码，共 ${pages} 页，输入后按回车跳转`}
+          aria-label={t.pagination.input(pages)}
           onFocus={(event) => event.currentTarget.select()}
           onKeyDown={onKeyDown}
           onBlur={(event) => commit(event.currentTarget)}
-        />
-        / {pages} 页{note}
+        />, pages)}{note}
       </span>
-      <button type="button" disabled={page === pages} onClick={() => onChange(page + 1)}>下一页</button>
+      <button type="button" disabled={page === pages} onClick={() => onChange(page + 1)}>{t.pagination.next}</button>
     </nav>
   );
 }
