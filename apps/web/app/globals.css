@@ -169,25 +169,6 @@ summary:focus-visible {
   font-weight: 650;
   white-space: nowrap;
 }
-/* 语言切换：与来访胶囊同高同边框，可点击 */
-.lang-toggle {
-  height: 30px;
-  padding: 0 10px;
-  display: inline-flex;
-  align-items: center;
-  gap: 5px;
-  border: 1px solid var(--line);
-  border-radius: 99px;
-  color: var(--ink-soft);
-  background: var(--field);
-  font-size: 12px;
-  font-weight: 650;
-  white-space: nowrap;
-  cursor: pointer;
-  transition: color .14s ease, border-color .14s ease, background-color .14s ease;
-}
-.lang-toggle:hover { color: var(--pine); border-color: var(--line-strong); background: var(--hover); }
-.lang-toggle:focus-visible { outline: none; box-shadow: 0 0 0 3px var(--focus-ring); }
 .status-pill .dot {
   width: 6px;
   height: 6px;
@@ -268,6 +249,63 @@ summary:focus-visible {
   letter-spacing: .02em;
 }
 .rail-version:hover { color: var(--pine); background: var(--hover); }
+.rail-tools { display: flex; align-items: center; gap: 8px; }
+/* 语言切换：与版本号同一套淡色小字按钮 */
+.lang-toggle {
+  height: 24px;
+  margin: -4px 0;
+  padding: 0 6px;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  border: 0;
+  border-radius: 6px;
+  color: var(--ink-faint);
+  background: transparent;
+  font-size: 11px;
+  font-weight: 650;
+  white-space: nowrap;
+  cursor: pointer;
+}
+.lang-toggle:hover { color: var(--pine); background: var(--hover); }
+.lang-toggle:focus-visible { outline: none; box-shadow: 0 0 0 3px var(--focus-ring); }
+.lang-toggle[aria-expanded="true"] { color: var(--pine); background: var(--hover); }
+/* 语言菜单：与主题弹层同一套外观，竖排三项 */
+.lang-picker { position: relative; display: flex; align-items: center; }
+.lang-popover {
+  position: absolute;
+  right: -6px;
+  bottom: calc(100% + 10px);
+  z-index: 30;
+  min-width: 132px;
+  padding: 5px;
+  display: grid;
+  gap: 2px;
+  border: 1px solid var(--line-strong);
+  border-radius: 10px;
+  background: var(--surface);
+  box-shadow: 0 10px 28px rgba(17, 48, 44, .16);
+  animation: dialog-in .14s ease-out;
+}
+:root[data-mode="dark"] .lang-popover { box-shadow: 0 10px 28px rgba(0, 0, 0, .5); }
+.lang-popover button {
+  height: 32px;
+  padding: 0 10px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  border: 0;
+  border-radius: 7px;
+  color: var(--ink-soft);
+  background: transparent;
+  font-size: 12px;
+  font-weight: 650;
+  white-space: nowrap;
+  cursor: pointer;
+}
+.lang-popover button:hover { color: var(--ink); background: var(--hover); }
+.lang-popover button[aria-pressed="true"] { color: var(--pine); background: var(--mint); }
 
 /* 关于本站弹窗（点击左下角版本号） */
 .about-dialog {
@@ -330,7 +368,26 @@ summary:focus-visible {
   transition: background-color .14s ease, border-color .14s ease;
 }
 .about-dialog-ok:hover { border-color: var(--jade-hover); background: var(--jade-hover); }
-.theme-picker { display: flex; align-items: center; gap: 6px; }
+/* 主题：只显示当前色块，点开后在上方弹出三个可选色块 */
+.theme-picker { position: relative; display: flex; align-items: center; }
+.theme-picker .theme-current { width: 16px; height: 16px; border-radius: 4px; cursor: pointer; }
+.theme-picker .theme-current:hover, .theme-picker .theme-current[aria-expanded="true"] { outline: 2px solid var(--line-strong); outline-offset: 2px; }
+.theme-popover {
+  position: absolute;
+  right: -6px;
+  bottom: calc(100% + 10px);
+  z-index: 30;
+  padding: 8px;
+  display: flex;
+  gap: 8px;
+  border: 1px solid var(--line-strong);
+  border-radius: 10px;
+  background: var(--surface);
+  box-shadow: 0 10px 28px rgba(17, 48, 44, .16);
+  animation: dialog-in .14s ease-out;
+}
+:root[data-mode="dark"] .theme-popover { box-shadow: 0 10px 28px rgba(0, 0, 0, .5); }
+.theme-popover .theme-swatch { width: 18px; height: 18px; border-radius: 4px; cursor: pointer; }
 .theme-swatch {
   width: 13px;
   height: 13px;
@@ -1119,6 +1176,9 @@ summary:focus-visible {
   .rail-label { overflow: visible; }
   .rail-icon { width: 26px; height: 26px; }
   .rail-footer { margin: 0 0 0 auto; padding: 0 6px 0 10px; gap: 12px; }
+  /* 窄屏侧栏在页面顶部，弹层改为向下展开 */
+  .theme-popover, .lang-popover { top: calc(100% + 10px); bottom: auto; }
+  .rail { overflow: visible; }
   .rail-version { margin: 0; }
   .main-content { padding-inline: 0; }
   .global-player { left: 8px; right: 8px; bottom: 8px; }

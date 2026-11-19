@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { numberLocale } from "./i18n";
 import { useLocale } from "./locale-provider";
 
 const STORAGE_PREFIX = "xunxian:daily-visitor:";
@@ -75,7 +76,7 @@ export function VisitTracker() {
 export function DailyVisitStatus() {
   const [count, setCount] = useState<number | null>(null);
   const { locale, t } = useLocale();
-  const formatted = count?.toLocaleString(locale === "en" ? "en-US" : "zh-CN");
+  const formatted = count?.toLocaleString(numberLocale(locale));
 
   useEffect(() => {
     const receiveCount = (event: Event) => {

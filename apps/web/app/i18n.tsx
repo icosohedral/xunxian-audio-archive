@@ -1,12 +1,18 @@
 import type { ReactNode } from "react";
 
-export const LOCALES = ["zh", "en"] as const;
+export const LOCALES = ["zh", "zh-Hant", "en"] as const;
 export type Locale = (typeof LOCALES)[number];
 export const DEFAULT_LOCALE: Locale = "zh";
 /** The visitor's language choice; read on the server so the first render is already in that language. */
 export const LOCALE_COOKIE = "xunxian-locale";
 
-export const htmlLang = (locale: Locale) => (locale === "en" ? "en" : "zh-CN");
+export const htmlLang = (locale: Locale) => ({ zh: "zh-CN", "zh-Hant": "zh-Hant", en: "en" })[locale];
+/** Number formatting locale for each page language. */
+export const numberLocale = (locale: Locale) => ({ zh: "zh-CN", "zh-Hant": "zh-TW", en: "en-US" })[locale];
+/** Each language's name, written in that language, for the language menu. */
+export const LOCALE_NAMES: Record<Locale, string> = { zh: "简体中文", "zh-Hant": "繁體中文", en: "English" };
+/** Short label for the sidebar button. */
+export const LOCALE_SHORT: Record<Locale, string> = { zh: "简", "zh-Hant": "繁", en: "EN" };
 
 export function isLocale(value: unknown): value is Locale {
   return typeof value === "string" && (LOCALES as readonly string[]).includes(value);
@@ -14,12 +20,15 @@ export function isLocale(value: unknown): value is Locale {
 
 /**
  * Locale for a request: the saved choice if there is one, otherwise the browser's first language.
- * Browsers that ask for Chinese, and requests without a language (most crawlers), get Chinese.
+ * Taiwan, Hong Kong, Macau and zh-Hant browsers get Traditional Chinese; other Chinese browsers and
+ * requests without a language (most crawlers) get Simplified Chinese; everyone else gets English.
  */
 export function resolveLocale(cookieValue: string | undefined, acceptLanguage: string | null): Locale {
   if (isLocale(cookieValue)) return cookieValue;
-  const first = acceptLanguage?.split(",")[0]?.trim().toLowerCase();
-  if (!first || first === "*" || first.startsWith("zh")) return "zh";
+  const first = acceptLanguage?.split(",")[0]?.split(";")[0]?.trim().toLowerCase();
+  if (!first || first === "*") return "zh";
+  if (/^zh-(hant|tw|hk|mo)\b/.test(first)) return "zh-Hant";
+  if (first.startsWith("zh")) return "zh";
   return "en";
 }
 
@@ -82,8 +91,21 @@ const TAG_LABELS_EN: Record<string, string> = {
   驭剑: "Yujian",
 };
 
+/** Traditional Chinese spellings of the default tag names. */
+const TAG_LABELS_HANT: Record<string, string> = {
+  [UNCATEGORIZED]: "未分類",
+  城镇: "城鎮", 女儿国: "女兒國", 白云观: "白雲觀", 道观: "道觀", 镇妖塔: "鎮妖塔", 龙宫: "龍宮",
+  NPC语音: "NPC語音", 中立NPC语音: "中立NPC語音", 敌对NPC语音: "敵對NPC語音", 叫卖语音: "叫賣語音",
+  问候语音: "問候語音", 求助语音: "求助語音", 死亡语音: "死亡語音", 五行劫剧情: "五行劫劇情",
+  女儿国剧情: "女兒國劇情", 魔尊剧情: "魔尊劇情", 宠物技能: "寵物技能", 法宝技能: "法寶技能",
+  灵宝吟唱: "靈寶吟唱", 环境音效: "環境音效", 界面音效: "介面音效", 系统提示: "系統提示",
+  进度条: "進度條", 乘风: "乘風", 奇门: "奇門", 掌电: "掌電", 罗刹: "羅剎", 金刚: "金剛", 驭剑: "馭劍",
+};
+
 export function tagLabel(locale: Locale, tag: string) {
-  return locale === "en" ? TAG_LABELS_EN[tag] ?? tag : tag;
+  if (locale === "en") return TAG_LABELS_EN[tag] ?? tag;
+  if (locale === "zh-Hant") return TAG_LABELS_HANT[tag] ?? tag;
+  return tag;
 }
 
 const zh = {
@@ -96,13 +118,13 @@ const zh = {
   },
   nav: { overview: "总览", music: "仙乐集", sounds: "万籁库", label: "资料库主导航" },
   shell: { skip: "跳到资料正文", home: "寻仙音乐资料库首页" },
-  language: { label: "语言", switchTo: "切换到英文 (English)", short: "EN" },
+  language: { label: "语言", current: (name: string) => `语言：${name}，点击更换` },
   visits: {
     label: "今日来访",
     loading: "正在载入今日访客数",
     count: (count: string) => `今日来访 ${count} 人次`,
   },
-  theme: { label: "配色主题", green: "青绿主题", orange: "陶土橙主题", dark: "深色主题" },
+  theme: { label: "配色主题", current: (name: string) => `配色主题：${name}，点击更换`, green: "青绿主题", orange: "陶土橙主题", dark: "深色主题" },
   about: {
     open: (version: string) => `关于寻仙音乐资料库，版本 ${version}`,
     repo: "项目地址",
@@ -230,13 +252,13 @@ const en: Messages = {
   },
   nav: { overview: "Overview", music: "Music", sounds: "Sounds", label: "Archive navigation" },
   shell: { skip: "Skip to content", home: "Xunxian Music Archive home" },
-  language: { label: "Language", switchTo: "切换到中文 (Chinese)", short: "中文" },
+  language: { label: "Language", current: (name: string) => `Language: ${name}. Click to change.` },
   visits: {
     label: "Visits today",
     loading: "Loading today's visit count",
     count: (count: string) => `${count} visits today`,
   },
-  theme: { label: "Color theme", green: "Jade theme", orange: "Terracotta theme", dark: "Dark theme" },
+  theme: { label: "Color theme", current: (name: string) => `Color theme: ${name}. Click to change.`, green: "Jade theme", orange: "Terracotta theme", dark: "Dark theme" },
   about: {
     open: (version: string) => `About Xunxian Music Archive, version ${version}`,
     repo: "Repository",
@@ -352,4 +374,136 @@ const en: Messages = {
   },
 };
 
-export const messages: Record<Locale, Messages> = { zh, en };
+const zhHant: Messages = {
+  siteName: "尋仙音樂資料庫",
+  meta: {
+    description: "瀏覽、檢索與試聽《尋仙》遊戲音樂與音效資料。",
+    musicDescription: "瀏覽與試聽《尋仙》城鎮、野外、副本和節慶背景音樂。",
+    soundsDescription: "檢索、分類與試聽《尋仙》遊戲音效。",
+    ogLocale: "zh_TW",
+  },
+  nav: { overview: "總覽", music: "仙樂集", sounds: "萬籟庫", label: "資料庫主導覽" },
+  shell: { skip: "跳到資料正文", home: "尋仙音樂資料庫首頁" },
+  language: { label: "語言", current: (name: string) => `語言：${name}，點擊更換` },
+  visits: {
+    label: "今日來訪",
+    loading: "正在載入今日訪客數",
+    count: (count: string) => `今日來訪 ${count} 人次`,
+  },
+  theme: { label: "配色主題", current: (name: string) => `配色主題：${name}，點擊更換`, green: "青綠主題", orange: "陶土橙主題", dark: "深色主題" },
+  about: {
+    open: (version: string) => `關於尋仙音樂資料庫，版本 ${version}`,
+    repo: "專案位址",
+    hub: "資源總站",
+    notice: "本站為資料整理與試聽專案，遊戲及相關權利歸原權利人所有。",
+    ok: "知道了",
+  },
+  player: {
+    label: "全域音樂播放器",
+    mode: { sequence: "順序播放", shuffle: "隨機播放", repeat: "單曲循環" },
+    modeTitle: (mode: string) => `播放模式：${mode}`,
+    previous: "上一首",
+    next: "下一首",
+    loading: "正在載入",
+    pause: "暫停",
+    play: "播放",
+    progress: "播放進度",
+    volume: "音量",
+    errors: { timeout: "音訊載入逾時，請重試", play: "無法播放音訊" },
+  },
+  home: {
+    intro: "在中國神話與人間煙火之間尋仙",
+    body: "尋仙以中國美術片風格構築了一個有神仙妖怪、法寶靈獸，也有城鎮村落與市井人情的東方世界。音樂與音效記錄了其中的晝夜、地域、職業與劇情變化，本資料庫希望讓這些散落的聲音重新變得可檢索、可聆聽。",
+    all: "全部音訊",
+    music: "背景音樂",
+    sounds: "遊戲音效",
+    totalHint: (hours: string, mib: string) => `共 ${hours} 小時 · ${mib} MiB`,
+    hours: (hours: string) => `${hours} 小時`,
+  },
+  pagination: {
+    label: "分頁",
+    previous: "上一頁",
+    next: "下一頁",
+    input: (pages: number) => `頁碼，共 ${pages} 頁，輸入後按 Enter 跳轉`,
+    page: (input: ReactNode, pages: number) => <>第{input}/ {pages} 頁</>,
+    perPage: (size: number) => ` · 每頁 ${size} 筆`,
+  },
+  chips: { all: "全部", more: "更多" },
+  empty: {
+    title: "沒有找到符合的音訊",
+    hint: <>可按檔名的一部分搜尋，例如 <code>boss</code>、<code>night</code>；也可以換個分類試試。</>,
+    reset: "清除搜尋與篩選",
+  },
+  library: {
+    filters: "搜尋與篩選",
+    rules: "分類規則",
+    rulePanel: "正則分類規則",
+    patternLabel: "檔名正則",
+    save: "儲存修改",
+    add: "新增規則",
+    cancel: "取消",
+    currentRules: "目前規則",
+    importJson: "匯入 JSON",
+    exportJson: "匯出 JSON",
+    editRule: (name: string) => `編輯 ${name} 規則`,
+    deleteRule: (name: string) => `刪除 ${name} 規則`,
+    editTitle: "編輯規則",
+    deleteTitle: "刪除規則",
+    errors: {
+      notObject: "檔案內容不是有效物件",
+      unsupported: "不支援的檔案格式或版本",
+      ruleInvalid: (index: number) => `第 ${index} 條規則格式無效`,
+      ruleMissing: (index: number) => `第 ${index} 條規則缺少名稱或正則`,
+      ruleRegex: (index: number) => `第 ${index} 條規則的正則無效`,
+      defaultMissing: "預設規則檔案不存在",
+      defaultFailed: (message?: string) => (message ? `預設規則載入失敗：${message}` : "預設規則載入失敗"),
+      regex: (message?: string) => (message ? `正則無效：${message}` : "正規表示式無效"),
+      importFailed: (message?: string) => (message ? `匯入失敗：${message}` : "匯入失敗：無法讀取檔案"),
+    },
+    imported: (added: number, updated: number) => `匯入完成：新增 ${added} 條，更新 ${updated} 條`,
+  },
+  music: {
+    search: "搜尋檔名或標籤…",
+    count: (shown: string, total: string) => `${shown} / ${total} 首`,
+    ruleCount: (count: number) => `${count} 首`,
+    nameLabel: "標籤名稱",
+    namePlaceholder: "例如：城鎮音樂",
+    patternPlaceholder: "^world_ 或 /.*night.*$/i",
+    fillBoth: "請填寫標籤名稱和正規表示式",
+    hint: <>可輸入正則內容，預設忽略大小寫；完整的 <code>/.*night.*$/i</code> 形式也可直接使用。</>,
+    list: "背景音樂列表",
+    head: { track: "曲目", tags: "標籤", length: "時長" },
+  },
+  sounds: {
+    search: "搜尋檔名或分類…",
+    count: (shown: string, total: string) => `${shown} / ${total} 筆`,
+    ruleCount: (count: number) => `${count} 筆`,
+    filterSettings: "篩選設定",
+    minDuration: (seconds: number) => `≧ ${seconds} 秒`,
+    duration: "音效時長",
+    durationAtLeast: "音效時長 ≧",
+    seconds: "秒",
+    nameLabel: "分類名稱",
+    namePlaceholder: "例如：角色語音",
+    patternPlaceholder: "^boss 或 /.*qimen.*$/i",
+    fillBoth: "請填寫分類名稱和正規表示式",
+    hint: <>可輸入正則內容，例如 <code>^boss</code>（預設加上 i），也可輸入完整形式 <code>/.*qimen.*$/i</code>，完整形式不會被重複包裹。</>,
+    loadFailed: "音效載入失敗，請稍後重試。",
+    list: "音效列表",
+    loadingName: (name: string) => `正在載入 ${name}`,
+    play: (name: string) => `試聽 ${name}`,
+    playTitle: "點擊試聽",
+    filterTag: (tag: string) => `篩選標籤：${tag}`,
+    tagSeparator: "、",
+    copy: (name: string) => `複製檔名 ${name}`,
+    copyTitle: "複製檔名",
+    copied: "已複製",
+    errors: {
+      timeout: "音效載入逾時，請重試",
+      play: "無法播放音效",
+      copy: "複製檔名失敗，請檢查瀏覽器剪貼簿權限",
+    },
+  },
+};
+
+export const messages: Record<Locale, Messages> = { zh, "zh-Hant": zhHant, en };

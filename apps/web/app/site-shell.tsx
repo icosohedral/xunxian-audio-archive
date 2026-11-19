@@ -6,7 +6,7 @@ import { usePathname } from "next/navigation";
 import { useEffect, useRef, type CSSProperties } from "react";
 import { ListMusic, Pause, Play, Repeat2, Shuffle, SkipBack, SkipForward, Volume2 } from "lucide-react";
 import { AboutDialog } from "./about-dialog";
-import { LanguageToggle, useLocale } from "./locale-provider";
+import { LanguagePicker, useLocale } from "./locale-provider";
 import { usePlayer } from "./providers";
 import { ThemePicker } from "./theme-picker";
 import { formatTime } from "./types";
@@ -80,7 +80,6 @@ export function SiteShell({ children }: { children: React.ReactNode }) {
           <strong className="brand-name">{t.siteName}</strong>
         </Link>
         <div className="header-status">
-          <LanguageToggle />
           <span className="status-pill"><span className="dot" aria-hidden="true" /><DailyVisitStatus /></span>
         </div>
       </header>
@@ -94,7 +93,10 @@ export function SiteShell({ children }: { children: React.ReactNode }) {
           </nav>
           <div className="rail-footer">
             <AboutDialog />
-            <ThemePicker />
+            <div className="rail-tools">
+              <LanguagePicker />
+              <ThemePicker />
+            </div>
           </div>
         </aside>
         <main id="archive-main" className="main-content">{children}</main>

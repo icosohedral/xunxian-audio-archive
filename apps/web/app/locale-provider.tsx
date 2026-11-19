@@ -1,8 +1,9 @@
 "use client";
 
 import { createContext, useCallback, useContext, useMemo, useState } from "react";
-import { Languages } from "lucide-react";
-import { htmlLang, LOCALE_COOKIE, messages, tagLabel, type Locale, type Messages } from "./i18n";
+import { Check, Languages } from "lucide-react";
+import { htmlLang, LOCALE_COOKIE, LOCALE_NAMES, LOCALE_SHORT, LOCALES, messages, tagLabel, type Locale, type Messages } from "./i18n";
+import { usePopover } from "./use-popover";
 
 type LocaleState = {
   locale: Locale;
@@ -40,13 +41,41 @@ export function useLocale() {
   return value;
 }
 
-/** Header button that switches between Chinese and English. */
-export function LanguageToggle() {
+/** Sidebar button showing the current language; clicking it opens a menu of the languages. */
+export function LanguagePicker() {
   const { locale, t, setLocale } = useLocale();
+  const { open, setOpen, rootRef, triggerRef, closeAndFocus } = usePopover();
+
+  function choose(next: Locale) {
+    closeAndFocus();
+    if (next !== locale) setLocale(next);
+  }
+
   return (
-    <button type="button" className="lang-toggle" onClick={() => setLocale(locale === "zh" ? "en" : "zh")} aria-label={t.language.switchTo} title={t.language.switchTo} lang={locale === "zh" ? "en" : "zh-CN"}>
-      <Languages size={14} aria-hidden="true" />
-      <span>{t.language.short}</span>
-    </button>
+    <div className="lang-picker" ref={rootRef}>
+      <button
+        ref={triggerRef}
+        type="button"
+        className="lang-toggle"
+        onClick={() => setOpen((value) => !value)}
+        aria-label={t.language.current(LOCALE_NAMES[locale])}
+        title={LOCALE_NAMES[locale]}
+        aria-haspopup="true"
+        aria-expanded={open}
+      >
+        <Languages size={14} aria-hidden="true" />
+        <span>{LOCALE_SHORT[locale]}</span>
+      </button>
+      {open && (
+        <div className="lang-popover" role="group" aria-label={t.language.label}>
+          {LOCALES.map((value) => (
+            <button key={value} type="button" lang={htmlLang(value)} aria-pressed={value === locale} onClick={() => choose(value)}>
+              <span>{LOCALE_NAMES[value]}</span>
+              {value === locale && <Check size={14} aria-hidden="true" />}
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
   );
 }

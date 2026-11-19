@@ -79,6 +79,14 @@ test("renders English for English browsers and keeps a saved language choice", a
   const savedChinese = await (await render("/", undefined, { "accept-language": "en-US", cookie: "xunxian-locale=zh" })).text();
   assert.match(savedChinese, /<title>寻仙音乐资料库/);
 
+  const traditional = await (await render("/music", undefined, { "accept-language": "zh-TW,zh;q=0.9" })).text();
+  assert.match(traditional, /<html lang="zh-Hant"/);
+  assert.match(traditional, /<title>仙樂集 \| 尋仙音樂資料庫<\/title>/);
+  assert.match(traditional, /搜尋檔名或標籤/);
+
+  const savedTraditional = await (await render("/", undefined, { "accept-language": "en-US", cookie: "xunxian-locale=zh-Hant" })).text();
+  assert.match(savedTraditional, /今日來訪/);
+
   const savedEnglish = await (await render("/sounds", undefined, { cookie: "xunxian-locale=en" })).text();
   assert.match(savedEnglish, /<title>Sounds \| Xunxian Music Archive<\/title>/);
   assert.match(savedEnglish, /Visits today/);
