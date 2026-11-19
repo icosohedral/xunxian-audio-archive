@@ -36,6 +36,9 @@ work/
 original_data/
 generated/
 
+# Local design source images (logos, backgrounds); web-ready copies live in apps/web/public
+/assets/
+
 # Audio must never be committed, even if copied outside the directories above
 *.aac
 *.ac3
